@@ -6,7 +6,7 @@
 [![Play Now](https://img.shields.io/badge/Play_Now-Live-success?style=for-the-badge)](https://truth-or-lie-six.vercel.app/)
 [![Powered by Genlayer](https://img.shields.io/badge/Powered_by-Genlayer-black?style=for-the-badge&logo=python)](https://genlayer.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-gold.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Bradbury Testnet](https://img.shields.io/badge/Network-Bradbury_Testnet-blue?style=for-the-badge)](https://explorer-studio.genlayer.com)
+[![Testnet Bradbury](https://img.shields.io/badge/Network-Testnet_Bradbury-blue?style=for-the-badge)](https://explorer.testnet-chain.genlayer.com)
 
 *Stake $GEN tokens. Let decentralized AI validators judge the facts. Winners take the pool.*
 
@@ -14,15 +14,15 @@
 
 ---
 
-## 🌍 Live on Bradbury Testnet
+## 🌍 Live on Testnet Bradbury
 
-The logic is live! The game is currently deployed and fully playable on the **GenLayer Bradbury Testnet**. 
+The logic is live! The game is currently deployed and fully playable on the **GenLayer Testnet Bradbury**. 
 
 **🚀 Play Now:** [https://truth-or-lie-six.vercel.app/](https://truth-or-lie-six.vercel.app/)
 
 **🎮 Deployed Contract Address:**  
 `0x155c991fEdb92e50056B34EC639934be793375E4`  
-*(View on the [GenLayer Studio Explorer](https://explorer-studio.genlayer.com/))*
+*(View on the [GenLayer Explorer](https://explorer.testnet-chain.genlayer.com/))*
 
 ### Network Setup
 
@@ -30,11 +30,11 @@ To connect your wallet and interact with the game, add the testnet to your Web3 
 
 | Field | Value |
 | :--- | :--- |
-| **Network Name** | GenLayer Bradbury Testnet |
-| **Chain ID** | `8093` (Hex: `0x1F9D`) |
-| **RPC URL** | `https://rpc.bradbury.genlayer.com` |
+| **Network Name** | GenLayer Testnet Bradbury |
+| **Chain ID** | `4221` (Hex: `0x107D`) |
+| **GenLayer Chain RPC** | `https://rpc.testnet-chain.genlayer.com` |
 | **Currency Symbol** | `GEN` |
-| **Block Explorer** | [explorer-studio.genlayer.com](https://explorer-studio.genlayer.com) |
+| **Block Explorer** | [explorer.testnet-chain.genlayer.com](https://explorer.testnet-chain.genlayer.com) |
 
 💧 **Need tokens to play?**  
 Before placing your first bet, make sure to claim your testing tokens from the **[GenLayer Faucet](https://testnet-faucet.genlayer.foundation)**!
@@ -73,7 +73,7 @@ Instead of relying on centralized oracles or human judges, "Truth or Lie" delega
 This project showcases the unique paradigm of **GenLayer Intelligent Contracts**. 
 
 ### Key GenLayer Integrations:
-- **Pythonic State Management:** Utilizing `@allow_storage` and standard Python types to manage decentralized state.
+- **Pythonic State Management:** Utilizing standard Python types to manage decentralized state.
 - **Native AI Consensus:** GenLayer nodes inherently run LLMs. The contract doesn't call an external web2 API; the GenLayer network *is* the AI.
 - **Deterministic Off-Chain Data:** By fetching web pages during validator execution, GenLayer reaches a deterministic consensus on non-deterministic real-world events.
 
