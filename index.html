@@ -1357,7 +1357,7 @@ function logTx(type,msg,hash) {
   el.innerHTML=`
     <div class="txdot txd-${type}"></div>
     <div class="tx-msg">${msg}</div>
-    ${hash?`<div class="tx-hash"><a href="${EXPLORER}/transactions/${hash}" target="_blank">${hash.slice(0,14)}...</a></div>`:''}
+    ${hash?`<div class="tx-hash"><a href="${EXPLORER}/tx/${hash}" target="_blank">${hash.slice(0,14)}...</a></div>`:''}
   `;
   entries.prepend(el);
 }
