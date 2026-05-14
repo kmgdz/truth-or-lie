@@ -1,0 +1,318 @@
+async function checkNetworkSilent() {
+  if (!window.ethereum) return;
+  try {
+    const cid = await window.ethereum.request({ method: 'eth_chainId' });
+    if (cid.toLowerCase() !== CHAIN_ID.toLowerCase()) {
+      document.getElementById('warn-msg').textContent = walletAddr ? 'You are on the wrong network. Switch to play on-chain.' : 'Connect MetaMask + switch to GenLayer Testnet Bradbury';
+      document.getElementById('switch-net-btn').style.display = 'inline-block';
+      document.getElementById('warn-banner').classList.add('show');
+    } else {
+      if (walletAddr) {
+        document.getElementById('warn-banner').classList.remove('show');
+      } else {
+        document.getElementById('warn-msg').textContent = 'Connect MetaMask to play on-chain';
+        document.getElementById('switch-net-btn').style.display = 'none';
+        document.getElementById('warn-banner').classList.add('show');
+      }
+    }
+  } catch(e) {}
+}
+
+function onConnected() {
+  const pill = document.getElementById('wallet-pill');
+  pill.classList.add('live');
+  document.getElementById('wpill-dot').style.cssText = '';
+  document.getElementById('wpill-text').textContent = walletAddr.slice(0,6)+'...'+walletAddr.slice(-4);
+  document.getElementById('wallet-display').value = walletAddr.slice(0,10)+'...'+walletAddr.slice(-6);
+  document.getElementById('warn-banner').classList.remove('show');
+  toast('Wallet connected!', 'ok');
+  logTx('ok', 'Connected: '+walletAddr, '');
+  checkNetworkSilent();
+
+  window.ethereum.on('accountsChanged', accs => {
+    walletAddr = accs[0] || null;
+    if (walletAddr) {
+      document.getElementById('wpill-text').textContent = walletAddr.slice(0,6)+'...'+walletAddr.slice(-4);
+      document.getElementById('wallet-display').value = walletAddr.slice(0,10)+'...'+walletAddr.slice(-6);
+      checkNetworkSilent();
+    } else {
+      document.getElementById('wallet-pill').classList.remove('live');
+      document.getElementById('wpill-text').textContent = 'CONNECT WALLET';
+      document.getElementById('wallet-display').value = '';
+      document.getElementById('warn-msg').textContent = 'Connect MetaMask + switch to GenLayer Testnet Bradbury to play on-chain';
+      document.getElementById('switch-net-btn').style.display = 'none';
+      document.getElementById('warn-banner').classList.add('show');
+    }
+  });
+
+  window.ethereum.on('chainChanged', _chainId => {
+    checkNetworkSilent();
+  });
+}
+
+// ── CONTRACT LOAD
+async function loadContract() {
+  const addr = document.getElementById('contract-input').value.trim();
+  if (!addr.startsWith('0x')) { toast('Invalid address', 'err'); return; }
+  contractAddr = addr;
+  setBtnLoad('load-btn', true, 'LOADING...');
+  try {
+    const raw = await viewCall('get_game_summary', []);
+    const data = JSON.parse(raw);
+    document.getElementById('gc-addr').textContent = addr.slice(0,14)+'...'+addr.slice(-6);
+    document.getElementById('stmt-text').textContent = data.statement || 'No statement';
+    trueAmt = (Number(data.total_true) || 0) / 1e18;
+    lieAmt  = (Number(data.total_lie) || 0) / 1e18;
+    gameStatus = data.status||'open';
+    updateBar();
+    setStatus(gameStatus);
+    document.getElementById('refresh-btn').disabled = false;
+    if (gameStatus==='open') document.getElementById('judge-btn').disabled=false;
+    if (gameStatus==='settled') { await showVerdict(); document.getElementById('claim-btn').style.display='inline-block'; }
+    toast('Game loaded from chain!', 'ok');
+    logTx('ok', 'Contract loaded: '+addr.slice(0,14)+'...', '');
+  } catch(e) {
+    toast('Load failed: '+(e.message||e), 'err');
+    logTx('err', 'Load failed: '+(e.message||''), '');
+  }
+  setBtnLoad('load-btn', false, 'LOAD GAME');
+}
+
+// ── RPC CALLS
+async function viewCall(method, args=[]) {
+  const data = encodeCall(method, args);
+  const body = {jsonrpc:'2.0',id:Date.now(),method:'eth_call',params:[{to:contractAddr,data},'latest']};
+  const res = await fetch(RPC, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const json = await res.json();
+  if (json.error) throw new Error(json.error.message);
+  return hexToStr(json.result);
+}
+
+async function sendTx(method, args=[], valueGEN=0) {
+  if (!walletAddr) { toast('Connect wallet first','info'); document.getElementById('warn-banner').classList.add('show'); return null; }
+  await ensureNetwork();
+  const data = encodeCall(method, args);
+  const tx = {from:walletAddr, to:contractAddr, data, gas:'0x493E0'};
+  if (valueGEN>0) { const w=BigInt(Math.floor(valueGEN*1e18)); tx.value='0x'+w.toString(16); }
+  return await window.ethereum.request({method:'eth_sendTransaction',params:[tx]});
+}
+
+function encodeCall(method, args) {
+  const str = JSON.stringify({method, args});
+  return '0x'+[...new TextEncoder().encode(str)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+function hexToStr(hex) {
+  if (!hex||hex==='0x'||hex==='0x0') return '';
+  try {
+    const bytes = hex.replace('0x','').match(/.{1,2}/g).map(b=>parseInt(b,16));
+    return new TextDecoder().decode(new Uint8Array(bytes));
+  } catch { return hex; }
+}
+
+// ── GAME ACTIONS
+function selectSide(side) {
+  if (gameStatus!=='open') { toast('Betting is closed','info'); return; }
+  selectedSide = side;
+  document.getElementById('bside-t').classList.toggle('sel', side==='true');
+  document.getElementById('bside-l').classList.toggle('sel', side==='lie');
+  const btn = document.getElementById('place-btn');
+  btn.disabled = false;
+  btn.className = 'bet-btn '+(side==='true'?'bb-t':'bb-l');
+  btn.textContent = 'STAKE ON '+(side==='true'?'TRUTH':'LIE')+' →';
+}
+
+async function placeBet() {
+  if (!selectedSide) { toast('Select TRUE or LIE','info'); return; }
+  if (!walletAddr)   { toast('Connect wallet first','info'); document.getElementById('warn-banner').classList.add('show'); return; }
+  const amt = parseFloat(document.getElementById('bet-amt').value)||10;
+  setBtnLoad('place-btn', true, 'SENDING TX...');
+  logTx('pending', 'Placing bet: '+amt+' GEN on '+selectedSide.toUpperCase(), '');
+  try {
+    const txHash = await sendTx('place_bet',[selectedSide],amt);
+    if (!txHash) throw new Error('Rejected');
+    toast('Bet sent! TX: '+txHash.slice(0,12)+'...', 'ok');
+    logTx('ok', 'Bet: '+amt+' GEN on '+selectedSide.toUpperCase(), txHash);
+    if (selectedSide==='true') trueAmt+=amt; else lieAmt+=amt;
+    updateBar();
+    setTimeout(refreshState, 4000);
+  } catch(e) {
+    toast('Bet failed: '+(e.message||e), 'err');
+    logTx('err', 'Bet failed: '+(e.message||''), '');
+  }
+  setBtnLoad('place-btn', false, 'STAKE ON '+(selectedSide||'TRUE').toUpperCase()+' →');
+}
+
+async function judgeStatement() {
+  if (!walletAddr) { toast('Connect wallet first','info'); document.getElementById('warn-banner').classList.add('show'); return; }
+  setBtnLoad('judge-btn', true, 'SENDING TX...');
+  logTx('pending', 'Closing betting...', '');
+  try {
+    const closeTx = await sendTx('close_betting',[]);
+    if (closeTx) { logTx('ok','Betting closed',closeTx); toast('Betting closed. Triggering evaluation...','info'); }
+    await sleep(2000);
+    const judgeTx = await sendTx('judge_statement',[]);
+    if (!judgeTx) throw new Error('Rejected');
+    setStatus('judging');
+    logTx('pending', 'LLMs evaluating statement... (30–90s)', judgeTx);
+    toast('5 LLM validators are researching the statement...', 'info');
+    pollVerdict(judgeTx);
+  } catch(e) {
+    toast('Failed: '+(e.message||e), 'err');
+    logTx('err', 'Judgment failed: '+(e.message||''), '');
+    setBtnLoad('judge-btn', false, '⚡ TRIGGER AI JUDGMENT');
+  }
+}
+
+async function pollVerdict(txHash) {
+  let tries=0;
+  const poll = async () => {
+    tries++;
+    try {
+      const raw = await viewCall('get_game_summary',[]);
+      const data = JSON.parse(raw);
+      if (data.status==='settled') {
+        trueAmt=(Number(data.total_true) || 0) / 1e18;
+        lieAmt=(Number(data.total_lie) || 0) / 1e18;
+        updateBar(); setStatus('settled');
+        await showVerdict();
+        document.getElementById('claim-btn').style.display='inline-block';
+        document.getElementById('judge-btn').textContent='✓ JUDGED';
+        logTx('ok','Verdict: '+(data.verdict||'?').toUpperCase(),txHash);
+        toast('Verdict is in! Check below.','ok');
+        return;
+      }
+    } catch{}
+    if (tries<24) setTimeout(poll,5000);
+    else { toast('Still processing — try refreshing','info'); setBtnLoad('judge-btn',false,'⚡ TRIGGER AI JUDGMENT'); }
+  };
+  setTimeout(poll,6000);
+}
+
+async function showVerdict() {
+  try {
+    const raw = await viewCall('get_verdict',[]);
+    const data = JSON.parse(raw);
+    if (data.error) return;
+    const v=(data.verdict||'').toLowerCase();
+    const c=Number(data.confidence)||0;
+    const r=data.reasoning||'No reasoning provided';
+    const total=((Number(data.total_true)||0)+(Number(data.total_lie)||0)) / 1e18;
+    const vw=document.getElementById('verdict-wrap');
+    vw.classList.add('show');
+    vw.className='verdict-wrap show '+(v==='true'?'vv-true':v==='lie'?'vv-lie':'');
+    const vr=document.getElementById('verdict-result');
+    vr.textContent=v.toUpperCase();
+    vr.className='verdict-result '+(v==='true'?'vr-true':v==='lie'?'vr-lie':'vr-uncertain');
+    const fc=document.getElementById('conf-fill');
+    const col=v==='true'?'var(--true)':v==='lie'?'var(--lie)':'var(--gold)';
+    fc.style.cssText='width:'+c+'%;background:'+col;
+    document.getElementById('conf-num').style.color=col;
+    document.getElementById('conf-num').textContent=c+'%';
+    document.getElementById('reasoning-box').textContent=r;
+    document.getElementById('reasoning-box').style.borderLeftColor=col;
+    document.getElementById('pool-info-left').textContent='Winner: '+v.toUpperCase()+' side';
+    document.getElementById('pool-info-right').textContent=total+' GEN pool total';
+  } catch(e) { console.error('showVerdict:',e); }
+}
+
+async function claimWinnings() {
+  if (!walletAddr) { toast('Connect wallet first','info'); return; }
+  setBtnLoad('claim-btn',true,'CLAIMING...');
+  logTx('pending','Claiming winnings...','');
+  try {
+    const txHash=await sendTx('claim_winnings',[]);
+    if (txHash) { toast('Claimed! TX: '+txHash.slice(0,12)+'...','ok'); logTx('ok','Winnings claimed',txHash); }
+  } catch(e) { toast('Claim failed: '+(e.message||e),'err'); logTx('err','Claim failed',''); }
+  setBtnLoad('claim-btn',false,'🏆 CLAIM WINNINGS');
+}
+
+async function refreshState() {
+  if (!contractAddr) return;
+  try {
+    const raw=await viewCall('get_game_summary',[]);
+    const data=JSON.parse(raw);
+    trueAmt=(Number(data.total_true) || 0) / 1e18;
+    lieAmt=(Number(data.total_lie) || 0) / 1e18;
+    gameStatus=data.status||'open';
+    document.getElementById('stmt-text').textContent=data.statement||'';
+    updateBar(); setStatus(gameStatus);
+    if (gameStatus==='settled') await showVerdict();
+    toast('Refreshed from chain','ok');
+  } catch(e) { toast('Refresh failed: '+(e.message||e),'err'); }
+}
+
+// ── UI HELPERS
+function updateBar() {
+  const total=trueAmt+lieAmt||1;
+  const tp=Math.round(trueAmt/total*100);
+  const lp=100-tp;
+  document.getElementById('pct-t').textContent=tp+'%';
+  document.getElementById('pct-l').textContent=lp+'%';
+  document.getElementById('vb-t').style.width=tp+'%';
+  document.getElementById('vb-l').style.width=lp+'%';
+  document.getElementById('vs-true').textContent=trueAmt.toFixed(2)+' GEN';
+  document.getElementById('vs-lie').textContent=lieAmt.toFixed(2)+' GEN';
+  document.getElementById('odds-t').textContent=trueAmt>0?(total/trueAmt).toFixed(2)+'x payout':'— payout';
+  document.getElementById('odds-l').textContent=lieAmt>0?(total/lieAmt).toFixed(2)+'x payout':'— payout';
+}
+
+function setStatus(s) {
+  gameStatus=s;
+  const pill=document.getElementById('gc-pill');
+  pill.className='gc-pill '+({open:'gp-open',judging:'gp-judging',settled:'gp-settled'}[s]||'gp-open');
+  pill.textContent={open:'OPEN',judging:'JUDGING...',settled:'SETTLED'}[s]||s.toUpperCase();
+  document.getElementById('judge-btn').disabled=s!=='open';
+}
+
+function setBtnLoad(id,loading,text) {
+  const btn=document.getElementById(id);
+  if (!btn) return;
+  btn.disabled=loading;
+  btn.innerHTML=loading?'<span class="spin"></span> '+text:text;
+}
+
+function logTx(type,msg,hash) {
+  txCount++;
+  document.getElementById('tx-ct').textContent=txCount+' transaction'+(txCount!==1?'s':'');
+  const entries=document.getElementById('tx-entries');
+  if (txCount===1) entries.innerHTML='';
+  const el=document.createElement('div');
+  el.className='tx-entry';
+  el.innerHTML=`
+    <div class="txdot txd-${type}"></div>
+    <div class="tx-msg">${msg}</div>
+    ${hash?`<div class="tx-hash"><a href="${EXPLORER}/transactions/${hash}" target="_blank">${hash.slice(0,14)}...</a></div>`:''}
+  `;
+  entries.prepend(el);
+}
+
+function toast(msg,type='ok') {
+  const t=document.createElement('div');
+  t.className='toast '+type;
+  t.textContent=msg;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(()=>t.remove(),4000);
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+// ── INIT
+window.addEventListener('load',()=>{
+  if (window.ethereum) {
+    window.ethereum.request({method:'eth_accounts'}).then(accs=>{
+      if (accs.length>0) { walletAddr=accs[0]; onConnected(); }
+      else {
+        document.getElementById('warn-banner').classList.add('show');
+        checkNetworkSilent();
+      }
+    });
+  } else {
+    document.getElementById('warn-banner').classList.add('show');
+  }
+  // Auto-load the contract
+  setTimeout(()=>loadContract(), 800);
+});
+</script>
+</body>
+</html>

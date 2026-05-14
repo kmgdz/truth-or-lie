@@ -1136,8 +1136,8 @@ async function loadContract() {
     const data = JSON.parse(raw);
     document.getElementById('gc-addr').textContent = addr.slice(0,14)+'...'+addr.slice(-6);
     document.getElementById('stmt-text').textContent = data.statement || 'No statement';
-    trueAmt = Number(data.total_true)||0;
-    lieAmt  = Number(data.total_lie)||0;
+    trueAmt = (Number(data.total_true) || 0) / 1e18;
+    lieAmt  = (Number(data.total_lie) || 0) / 1e18;
     gameStatus = data.status||'open';
     updateBar();
     setStatus(gameStatus);
@@ -1247,8 +1247,8 @@ async function pollVerdict(txHash) {
       const raw = await viewCall('get_game_summary',[]);
       const data = JSON.parse(raw);
       if (data.status==='settled') {
-        trueAmt=Number(data.total_true)||trueAmt;
-        lieAmt=Number(data.total_lie)||lieAmt;
+        trueAmt=(Number(data.total_true) || 0) / 1e18;
+        lieAmt=(Number(data.total_lie) || 0) / 1e18;
         updateBar(); setStatus('settled');
         await showVerdict();
         document.getElementById('claim-btn').style.display='inline-block';
@@ -1272,7 +1272,7 @@ async function showVerdict() {
     const v=(data.verdict||'').toLowerCase();
     const c=Number(data.confidence)||0;
     const r=data.reasoning||'No reasoning provided';
-    const total=(Number(data.total_true)||0)+(Number(data.total_lie)||0);
+    const total=((Number(data.total_true)||0)+(Number(data.total_lie)||0)) / 1e18;
     const vw=document.getElementById('verdict-wrap');
     vw.classList.add('show');
     vw.className='verdict-wrap show '+(v==='true'?'vv-true':v==='lie'?'vv-lie':'');
@@ -1307,8 +1307,8 @@ async function refreshState() {
   try {
     const raw=await viewCall('get_game_summary',[]);
     const data=JSON.parse(raw);
-    trueAmt=Number(data.total_true)||0;
-    lieAmt=Number(data.total_lie)||0;
+    trueAmt=(Number(data.total_true) || 0) / 1e18;
+    lieAmt=(Number(data.total_lie) || 0) / 1e18;
     gameStatus=data.status||'open';
     document.getElementById('stmt-text').textContent=data.statement||'';
     updateBar(); setStatus(gameStatus);
@@ -1326,8 +1326,8 @@ function updateBar() {
   document.getElementById('pct-l').textContent=lp+'%';
   document.getElementById('vb-t').style.width=tp+'%';
   document.getElementById('vb-l').style.width=lp+'%';
-  document.getElementById('vs-true').textContent=trueAmt+' GEN';
-  document.getElementById('vs-lie').textContent=lieAmt+' GEN';
+  document.getElementById('vs-true').textContent=trueAmt.toFixed(2)+' GEN';
+  document.getElementById('vs-lie').textContent=lieAmt.toFixed(2)+' GEN';
   document.getElementById('odds-t').textContent=trueAmt>0?(total/trueAmt).toFixed(2)+'x payout':'— payout';
   document.getElementById('odds-l').textContent=lieAmt>0?(total/lieAmt).toFixed(2)+'x payout':'— payout';
 }
