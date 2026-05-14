@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+  window.addEventListener('error', function(e) {
+    if (e.message && e.message.includes('isZerion')) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  });
+  window.addEventListener('unhandledrejection', function(e) {
+    if (e.reason && e.reason.message && e.reason.message.includes('isZerion')) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  });
+</script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>TRUTH OR LIE — On-Chain Fact Game · GenLayer</title>
@@ -8,408 +22,149 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <style>
-/* ── RESET & ROOT ─────────────────────────────────────────── */
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#0a0008;
   --paper:#f5f0e8;
-  --cream:#ede8d8;
   --true:#00e676;
   --true-glow:rgba(0,230,118,0.25);
   --lie:#ff1744;
   --lie-glow:rgba(255,23,68,0.25);
   --gold:#c8a84b;
   --gold-dim:rgba(200,168,75,0.15);
-  --surface:rgba(10,0,8,0.85);
   --border:rgba(245,240,232,0.08);
   --border2:rgba(245,240,232,0.15);
   --anton:'Anton',sans-serif;
   --playfair:'Playfair Display',serif;
   --mono:'Space Mono',monospace;
 }
-
 html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--paper);font-family:var(--playfair);min-height:100vh;overflow-x:hidden;cursor:crosshair}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");pointer-events:none;z-index:9998;opacity:.6;mix-blend-mode:overlay}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,0.7) 100%);pointer-events:none;z-index:9997}
 
-body{
-  background:var(--ink);
-  color:var(--paper);
-  font-family:var(--playfair);
-  min-height:100vh;
-  overflow-x:hidden;
-  cursor:crosshair;
-}
-
-/* ── NOISE + VIGNETTE ─────────────────────────────────────── */
-body::before{
-  content:'';position:fixed;inset:0;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
-  pointer-events:none;z-index:9998;opacity:.6;mix-blend-mode:overlay;
-}
-body::after{
-  content:'';position:fixed;inset:0;
-  background:radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%);
-  pointer-events:none;z-index:9997;
-}
-
-/* ── MARQUEE TOP ──────────────────────────────────────────── */
-.marquee-top{
-  position:fixed;top:0;left:0;right:0;z-index:200;
-  height:32px;background:var(--true);
-  overflow:hidden;display:flex;align-items:center;
-}
-.marquee-inner{
-  display:flex;gap:0;animation:marq 20s linear infinite;
-  white-space:nowrap;
-}
-.marquee-item{
-  font-family:var(--mono);font-size:.6rem;font-weight:700;
-  color:#000;padding:0 2rem;letter-spacing:.15em;
-  display:flex;align-items:center;gap:1rem;
-}
+/* MARQUEE */
+.marquee-top{position:fixed;top:0;left:0;right:0;z-index:200;height:32px;background:var(--true);overflow:hidden;display:flex;align-items:center}
+.marquee-inner{display:flex;gap:0;animation:marq 20s linear infinite;white-space:nowrap}
+.marquee-item{font-family:var(--mono);font-size:.6rem;font-weight:700;color:#000;padding:0 2rem;letter-spacing:.15em;display:flex;align-items:center;gap:1rem}
 .marquee-item::after{content:'★';font-size:.5rem}
 @keyframes marq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
-/* ── NAV ──────────────────────────────────────────────────── */
-nav{
-  position:fixed;top:32px;left:0;right:0;z-index:100;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:1rem 2.5rem;
-  border-bottom:1px solid var(--border2);
-  background:rgba(10,0,8,0.9);
-  backdrop-filter:blur(24px);
-}
-
-/* LOGO */
+/* NAV */
+nav{position:fixed;top:32px;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1rem 2.5rem;border-bottom:1px solid var(--border2);background:rgba(10,0,8,0.9);backdrop-filter:blur(24px)}
 .logo{display:flex;align-items:center;gap:1rem;text-decoration:none}
-.logo-mark{position:relative;width:44px;height:44px;flex-shrink:0}
+.logo-mark{width:44px;height:44px;flex-shrink:0}
 .logo-mark svg{width:100%;height:100%}
 .logo-words{display:flex;flex-direction:column;line-height:1}
 .logo-true{font-family:var(--anton);font-size:1.1rem;letter-spacing:.08em;color:var(--true)}
 .logo-lie{font-family:var(--anton);font-size:1.1rem;letter-spacing:.08em;color:var(--lie)}
-
 .nav-links{display:flex;align-items:center;gap:2rem}
-.nav-links a{
-  font-family:var(--mono);font-size:.65rem;color:rgba(245,240,232,.5);
-  text-decoration:none;letter-spacing:.1em;transition:color .2s
-}
+.nav-links a{font-family:var(--mono);font-size:.65rem;color:rgba(245,240,232,.5);text-decoration:none;letter-spacing:.1em;transition:color .2s}
 .nav-links a:hover{color:var(--paper)}
-
-.wallet-pill{
-  display:flex;align-items:center;gap:.75rem;
-  padding:.5rem 1.25rem;
-  border:1px solid var(--border2);
-  cursor:pointer;background:transparent;
-  transition:all .25s;
-}
+.wallet-pill{display:flex;align-items:center;gap:.75rem;padding:.5rem 1.25rem;border:1px solid var(--border2);cursor:pointer;background:transparent;transition:all .25s}
 .wallet-pill:hover{border-color:var(--true);background:rgba(0,230,118,.06)}
 .wpill-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background .3s}
 .wallet-pill.live .wpill-dot{background:var(--true);box-shadow:0 0 8px var(--true)}
 .wpill-text{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;color:var(--paper)}
 .wpill-net{font-family:var(--mono);font-size:.55rem;color:rgba(245,240,232,.4);letter-spacing:.08em}
 
-/* ── HERO ─────────────────────────────────────────────────── */
-.hero{
-  min-height:100vh;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  padding:8rem 2rem 4rem;
-  position:relative;text-align:center;
-  overflow:hidden;
-}
-
-/* giant BG letters */
-.hero-bg-t{
-  position:absolute;left:-5vw;top:50%;transform:translateY(-55%);
-  font-family:var(--anton);font-size:40vw;line-height:1;
-  color:rgba(0,230,118,0.03);pointer-events:none;user-select:none;
-  letter-spacing:-.05em;
-}
-.hero-bg-l{
-  position:absolute;right:-5vw;top:50%;transform:translateY(-45%);
-  font-family:var(--anton);font-size:40vw;line-height:1;
-  color:rgba(255,23,68,0.03);pointer-events:none;user-select:none;
-  letter-spacing:-.05em;
-}
-
-/* golden divider line */
-.hero-line{
-  width:1px;height:60px;background:var(--gold);
-  margin:0 auto 2rem;
-  animation:linein 1.2s ease forwards;opacity:0;
-}
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8rem 2rem 4rem;position:relative;text-align:center;overflow:hidden}
+.hero-bg-t{position:absolute;left:-5vw;top:50%;transform:translateY(-55%);font-family:var(--anton);font-size:40vw;line-height:1;color:rgba(0,230,118,0.03);pointer-events:none;user-select:none;letter-spacing:-.05em}
+.hero-bg-l{position:absolute;right:-5vw;top:50%;transform:translateY(-45%);font-family:var(--anton);font-size:40vw;line-height:1;color:rgba(255,23,68,0.03);pointer-events:none;user-select:none;letter-spacing:-.05em}
+.hero-line{width:1px;height:60px;background:var(--gold);margin:0 auto 2rem;animation:linein 1.2s ease forwards;opacity:0}
 @keyframes linein{from{height:0;opacity:0}to{height:60px;opacity:1}}
-
-.hero-eyebrow{
-  font-family:var(--mono);font-size:.62rem;letter-spacing:.3em;
-  color:var(--gold);text-transform:uppercase;margin-bottom:1.5rem;
-  animation:fadein .8s .3s ease both;
-}
-
-.hero-title{
-  font-family:var(--anton);
-  font-size:clamp(5rem,16vw,14rem);
-  line-height:.88;letter-spacing:-.01em;
-  margin-bottom:1rem;
-  animation:fadein .8s .5s ease both;
-}
-.hero-title .ht{
-  display:block;color:var(--true);
-  text-shadow:0 0 80px rgba(0,230,118,.2),0 0 160px rgba(0,230,118,.1);
-}
-.hero-title .hor{
-  display:block;font-family:var(--playfair);font-style:italic;
-  font-size:.22em;color:var(--gold);letter-spacing:.2em;
-  margin:.1em 0;font-weight:400;
-}
-.hero-title .hl{
-  display:block;color:var(--lie);
-  text-shadow:0 0 80px rgba(255,23,68,.2),0 0 160px rgba(255,23,68,.1);
-}
-
-.hero-sub{
-  font-family:var(--playfair);font-style:italic;
-  font-size:1.15rem;color:rgba(245,240,232,.6);
-  max-width:480px;line-height:1.8;margin:1.5rem auto 3rem;
-  animation:fadein .8s .7s ease both;
-}
+.hero-eyebrow{font-family:var(--mono);font-size:.62rem;letter-spacing:.3em;color:var(--gold);text-transform:uppercase;margin-bottom:1.5rem;animation:fadein .8s .3s ease both}
+.hero-title{font-family:var(--anton);font-size:clamp(5rem,16vw,14rem);line-height:.88;letter-spacing:-.01em;margin-bottom:1rem;animation:fadein .8s .5s ease both}
+.hero-title .ht{display:block;color:var(--true);text-shadow:0 0 80px rgba(0,230,118,.2)}
+.hero-title .hor{display:block;font-family:var(--playfair);font-style:italic;font-size:.22em;color:var(--gold);letter-spacing:.2em;margin:.1em 0;font-weight:400}
+.hero-title .hl{display:block;color:var(--lie);text-shadow:0 0 80px rgba(255,23,68,.2)}
+.hero-sub{font-family:var(--playfair);font-style:italic;font-size:1.15rem;color:rgba(245,240,232,.6);max-width:480px;line-height:1.8;margin:1.5rem auto 3rem;animation:fadein .8s .7s ease both}
 .hero-sub strong{color:var(--paper);font-style:normal}
-
-.hero-actions{
-  display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;
-  animation:fadein .8s .9s ease both;
-}
-.btn-truth{
-  font-family:var(--mono);font-size:.7rem;font-weight:700;
-  letter-spacing:.15em;background:var(--true);color:#000;
-  border:none;padding:1.1rem 2.8rem;cursor:crosshair;
-  transition:all .2s;text-decoration:none;display:inline-block;
-  clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
-}
+.hero-actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;animation:fadein .8s .9s ease both}
+.btn-truth{font-family:var(--mono);font-size:.7rem;font-weight:700;letter-spacing:.15em;background:var(--true);color:#000;border:none;padding:1.1rem 2.8rem;cursor:crosshair;transition:all .2s;text-decoration:none;display:inline-block;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)}
 .btn-truth:hover{box-shadow:0 0 40px var(--true-glow);transform:translateY(-1px)}
-.btn-lie{
-  font-family:var(--mono);font-size:.7rem;font-weight:700;
-  letter-spacing:.15em;background:transparent;color:var(--lie);
-  border:1px solid var(--lie);padding:1.1rem 2.8rem;cursor:crosshair;
-  transition:all .2s;text-decoration:none;display:inline-block;
-  clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
-}
+.btn-lie{font-family:var(--mono);font-size:.7rem;font-weight:700;letter-spacing:.15em;background:transparent;color:var(--lie);border:1px solid var(--lie);padding:1.1rem 2.8rem;cursor:crosshair;transition:all .2s;text-decoration:none;display:inline-block;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)}
 .btn-lie:hover{background:var(--lie-glow);box-shadow:0 0 40px var(--lie-glow);transform:translateY(-1px)}
-
 @keyframes fadein{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 
-/* ── STATS STRIP ──────────────────────────────────────────── */
-.stats-strip{
-  display:grid;grid-template-columns:repeat(4,1fr);
-  border-top:1px solid var(--border2);border-bottom:1px solid var(--border2);
-  background:rgba(10,0,8,.6);backdrop-filter:blur(12px);
-  position:relative;z-index:10;
-}
-.stat-box{
-  padding:2rem 1.5rem;text-align:center;
-  border-right:1px solid var(--border);
-  position:relative;overflow:hidden;
-  transition:background .3s;
-}
-.stat-box:last-child{border-right:none}
-.stat-box:hover{background:rgba(245,240,232,.02)}
-.stat-num{
-  font-family:var(--anton);font-size:3rem;line-height:1;
-  margin-bottom:.25rem;letter-spacing:-.02em;
-}
-.stat-label{
-  font-family:var(--mono);font-size:.58rem;
-  color:rgba(245,240,232,.4);letter-spacing:.18em;text-transform:uppercase;
-}
-.stat-box:nth-child(1) .stat-num{color:var(--true)}
-.stat-box:nth-child(2) .stat-num{color:var(--gold)}
-.stat-box:nth-child(3) .stat-num{color:var(--paper)}
-.stat-box:nth-child(4) .stat-num{color:var(--lie)}
-
-/* ── SECTION COMMON ───────────────────────────────────────── */
+/* SECTION */
 .section{padding:6rem 2.5rem;position:relative;z-index:10}
-.sec-label{
-  font-family:var(--mono);font-size:.6rem;color:var(--gold);
-  letter-spacing:.25em;text-transform:uppercase;
-  display:flex;align-items:center;gap:1rem;margin-bottom:1rem;
-}
+.sec-label{font-family:var(--mono);font-size:.6rem;color:var(--gold);letter-spacing:.25em;text-transform:uppercase;display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
 .sec-label::before{content:'';display:block;width:32px;height:1px;background:var(--gold)}
-.sec-title{
-  font-family:var(--anton);font-size:clamp(2.5rem,5vw,5rem);
-  letter-spacing:-.01em;line-height:.95;margin-bottom:1.5rem;
-}
-.sec-sub{
-  font-family:var(--playfair);font-style:italic;
-  font-size:1rem;color:rgba(245,240,232,.55);
-  max-width:460px;line-height:1.8;
-}
+.sec-title{font-family:var(--anton);font-size:clamp(2.5rem,5vw,5rem);letter-spacing:-.01em;line-height:.95;margin-bottom:1.5rem}
+.sec-sub{font-family:var(--playfair);font-style:italic;font-size:1rem;color:rgba(245,240,232,.55);max-width:460px;line-height:1.8}
 
-/* ── HOW IT WORKS ─────────────────────────────────────────── */
+/* HOW IT WORKS */
 .how-section{background:rgba(245,240,232,.02);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-.how-grid{
-  display:grid;grid-template-columns:repeat(5,1fr);
-  gap:0;margin-top:3rem;
-  border:1px solid var(--border);
-}
-.how-step{
-  padding:2rem 1.5rem;border-right:1px solid var(--border);
-  position:relative;transition:background .3s;
-}
+.how-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin-top:3rem;border:1px solid var(--border)}
+.how-step{padding:2rem 1.5rem;border-right:1px solid var(--border);position:relative;transition:background .3s}
 .how-step:last-child{border-right:none}
 .how-step:hover{background:rgba(245,240,232,.03)}
-.how-num{
-  font-family:var(--anton);font-size:4rem;line-height:1;
-  color:rgba(245,240,232,.06);margin-bottom:1rem;
-}
+.how-num{font-family:var(--anton);font-size:4rem;line-height:1;color:rgba(245,240,232,.06);margin-bottom:1rem}
 .how-icon{font-size:1.5rem;margin-bottom:.75rem}
-.how-title{
-  font-family:var(--anton);font-size:.95rem;letter-spacing:.05em;
-  margin-bottom:.5rem;color:var(--paper);
-}
+.how-title{font-family:var(--anton);font-size:.95rem;letter-spacing:.05em;margin-bottom:.5rem;color:var(--paper)}
 .how-desc{font-size:.78rem;color:rgba(245,240,232,.5);line-height:1.7}
-.how-step::after{
-  content:'→';position:absolute;right:-12px;top:50%;
-  transform:translateY(-50%);color:var(--gold);font-size:.75rem;z-index:1;
-}
+.how-step::after{content:'→';position:absolute;right:-12px;top:50%;transform:translateY(-50%);color:var(--gold);font-size:.75rem;z-index:1}
 .how-step:last-child::after{display:none}
 
-/* ── GAME SECTION ─────────────────────────────────────────── */
-.game-section{
-  max-width:820px;margin:0 auto;
-  padding:5rem 2rem;position:relative;z-index:10;
-}
+/* GAME SECTION */
+.game-section{max-width:820px;margin:0 auto;padding:5rem 2rem;position:relative;z-index:10}
 
-/* CONTRACT LOADER */
-.loader-card{
-  border:1px solid var(--border2);padding:1.5rem 2rem;
-  margin-bottom:2rem;
-  background:linear-gradient(135deg,rgba(200,168,75,.05),transparent);
-  position:relative;overflow:hidden;
-}
-.loader-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--gold),transparent);
-}
-.loader-label{
-  font-family:var(--mono);font-size:.58rem;color:var(--gold);
-  letter-spacing:.18em;text-transform:uppercase;margin-bottom:1rem;
-  display:flex;align-items:center;gap:.75rem;
-}
+/* LOADER */
+.loader-card{border:1px solid var(--border2);padding:1.5rem 2rem;margin-bottom:2rem;background:linear-gradient(135deg,rgba(200,168,75,.05),transparent);position:relative;overflow:hidden}
+.loader-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.loader-label{font-family:var(--mono);font-size:.58rem;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;margin-bottom:1rem;display:flex;align-items:center;gap:.75rem}
 .loader-label::before{content:'◆';font-size:.4rem}
 .loader-row{display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap}
 .linput-wrap{flex:1;min-width:220px}
 .linput-label{font-family:var(--mono);font-size:.55rem;color:rgba(245,240,232,.35);letter-spacing:.12em;display:block;margin-bottom:.4rem;text-transform:uppercase}
-.linput{
-  width:100%;background:rgba(245,240,232,.04);
-  border:1px solid var(--border2);border-top:1px solid rgba(200,168,75,.3);
-  color:var(--paper);padding:.7rem 1rem;
-  font-family:var(--mono);font-size:.72rem;outline:none;
-  transition:border-color .2s;
-}
+.linput{width:100%;background:rgba(245,240,232,.04);border:1px solid var(--border2);border-top:1px solid rgba(200,168,75,.3);color:var(--paper);padding:.7rem 1rem;font-family:var(--mono);font-size:.72rem;outline:none;transition:border-color .2s}
 .linput:focus{border-color:rgba(200,168,75,.6);background:rgba(245,240,232,.06)}
 .linput::placeholder{color:rgba(245,240,232,.2)}
-.load-btn{
-  font-family:var(--mono);font-size:.65rem;font-weight:700;
-  letter-spacing:.12em;background:var(--gold);color:#000;
-  border:none;padding:.78rem 1.6rem;cursor:crosshair;
-  transition:all .2s;white-space:nowrap;
-  clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);
-}
+.load-btn{font-family:var(--mono);font-size:.65rem;font-weight:700;letter-spacing:.12em;background:var(--gold);color:#000;border:none;padding:.78rem 1.6rem;cursor:crosshair;transition:all .2s;white-space:nowrap;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)}
 .load-btn:hover{box-shadow:0 0 24px var(--gold-dim)}
 .load-btn:disabled{opacity:.35;cursor:not-allowed}
-.loader-note{
-  font-family:var(--mono);font-size:.55rem;
-  color:rgba(245,240,232,.25);margin-top:.75rem;line-height:1.6;
-}
+.loader-note{font-family:var(--mono);font-size:.55rem;color:rgba(245,240,232,.25);margin-top:.75rem;line-height:1.6}
 
-/* MAIN GAME CARD */
-.game-card{
-  border:1px solid var(--border2);
-  background:rgba(10,0,8,.7);
-  backdrop-filter:blur(20px);
-  position:relative;overflow:hidden;
-}
-.game-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,var(--true),var(--gold),var(--lie));
-}
-
-/* card top bar */
-.gc-top{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:.9rem 1.5rem;border-bottom:1px solid var(--border);
-}
+/* GAME CARD */
+.game-card{border:1px solid var(--border2);background:rgba(10,0,8,.7);backdrop-filter:blur(20px);position:relative;overflow:hidden}
+.game-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--true),var(--gold),var(--lie))}
+.gc-top{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.5rem;border-bottom:1px solid var(--border)}
 .gc-addr{font-family:var(--mono);font-size:.58rem;color:rgba(245,240,232,.3);letter-spacing:.06em}
-.gc-pill{
-  font-family:var(--mono);font-size:.55rem;font-weight:700;
-  letter-spacing:.12em;padding:.28rem .8rem;text-transform:uppercase;
-}
+.gc-pill{font-family:var(--mono);font-size:.55rem;font-weight:700;letter-spacing:.12em;padding:.28rem .8rem;text-transform:uppercase}
 .gp-open{background:rgba(0,230,118,.12);color:var(--true);border:1px solid rgba(0,230,118,.3)}
 .gp-judging{background:rgba(200,168,75,.12);color:var(--gold);border:1px solid rgba(200,168,75,.3)}
 .gp-settled{background:rgba(160,100,255,.1);color:#c084ff;border:1px solid rgba(160,100,255,.3)}
 
-/* statement area */
-.stmt-area{
-  padding:3rem 2rem 2rem;text-align:center;
-  position:relative;
-}
-.stmt-area::before{
-  content:'"';font-family:var(--playfair);font-style:italic;
-  font-size:8rem;color:rgba(245,240,232,.04);
-  position:absolute;top:-.5rem;left:1.5rem;line-height:1;
-}
-.stmt-eyebrow{
-  font-family:var(--mono);font-size:.55rem;color:var(--gold);
-  letter-spacing:.22em;text-transform:uppercase;margin-bottom:1.25rem;
-}
-.stmt-text{
-  font-family:var(--playfair);font-weight:700;font-style:italic;
-  font-size:clamp(1.2rem,3vw,1.8rem);
-  line-height:1.4;color:var(--paper);
-  min-height:56px;display:flex;align-items:center;justify-content:center;
-  text-align:center;padding:0 1rem;
-}
+/* STATEMENT */
+.stmt-area{padding:3rem 2rem 2rem;text-align:center;position:relative}
+.stmt-area::before{content:'"';font-family:var(--playfair);font-style:italic;font-size:8rem;color:rgba(245,240,232,.04);position:absolute;top:-.5rem;left:1.5rem;line-height:1}
+.stmt-eyebrow{font-family:var(--mono);font-size:.55rem;color:var(--gold);letter-spacing:.22em;text-transform:uppercase;margin-bottom:1.25rem}
+.stmt-text{font-family:var(--playfair);font-weight:700;font-style:italic;font-size:clamp(1.2rem,3vw,1.8rem);line-height:1.4;color:var(--paper);min-height:56px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 1rem}
 
-/* VS divider */
-.vs-row{
-  display:grid;grid-template-columns:1fr auto 1fr;
-  align-items:center;gap:1rem;padding:1.25rem 1.5rem;
-  border-top:1px solid var(--border);
-}
+/* VS ROW */
+.vs-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:1rem;padding:1.25rem 1.5rem;border-top:1px solid var(--border)}
 .vs-side{text-align:center}
 .vs-side-lbl{font-family:var(--mono);font-size:.6rem;letter-spacing:.15em;opacity:.6;margin-bottom:.25rem}
 .vs-side-amt{font-family:var(--anton);font-size:1.6rem;letter-spacing:-.01em}
 .vs-t .vs-side-amt{color:var(--true)}
 .vs-l .vs-side-amt{color:var(--lie)}
-.vs-badge{
-  font-family:var(--anton);font-size:1rem;letter-spacing:.08em;
-  color:var(--gold);padding:.3rem .7rem;
-  border:1px solid var(--gold-dim);
-}
+.vs-badge{font-family:var(--anton);font-size:1rem;letter-spacing:.08em;color:var(--gold);padding:.3rem .7rem;border:1px solid var(--gold-dim)}
 
-/* vote bar */
+/* VOTE BAR */
 .vbar-wrap{padding:0 1.5rem 1.5rem}
-.vbar-track{height:4px;background:rgba(245,240,232,.06);display:flex;overflow:hidden;position:relative}
+.vbar-track{height:4px;background:rgba(245,240,232,.06);display:flex;overflow:hidden}
 .vbar-true{height:100%;background:linear-gradient(90deg,var(--true),rgba(0,230,118,.7));transition:width .6s cubic-bezier(.4,0,.2,1)}
 .vbar-lie{height:100%;background:linear-gradient(90deg,rgba(255,23,68,.7),var(--lie));transition:width .6s cubic-bezier(.4,0,.2,1)}
 .vbar-pcts{display:flex;justify-content:space-between;margin-top:.4rem}
 .vbp{font-family:var(--mono);font-size:.62rem}
 .vbp.t{color:var(--true)}.vbp.l{color:var(--lie)}
 
-/* bet sides */
-.bet-sides{
-  display:grid;grid-template-columns:1fr 1fr;
-  gap:1px;background:var(--border);
-  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
-}
-.bside{
-  padding:1.5rem;text-align:center;cursor:crosshair;
-  background:var(--ink);transition:all .2s;user-select:none;
-  position:relative;overflow:hidden;
-}
-.bside::before{
-  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
-  transform:scaleX(0);transition:transform .3s;
-}
+/* BET SIDES */
+.bet-sides{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.bside{padding:1.5rem;text-align:center;cursor:crosshair;background:var(--ink);transition:all .2s;user-select:none;position:relative;overflow:hidden}
+.bside::before{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;transform:scaleX(0);transition:transform .3s}
 .bside.ts::before{background:var(--true)}
 .bside.ls::before{background:var(--lie)}
 .bside.ts:hover,.bside.ts.sel{background:rgba(0,230,118,.05)}
@@ -424,48 +179,26 @@ nav{
 .bside.ls .bside-lbl{color:var(--lie)}
 .bside-odds{font-family:var(--mono);font-size:.6rem;color:rgba(245,240,232,.4)}
 
-/* bet input row */
-.bet-controls{
-  padding:1.25rem 1.5rem;display:flex;gap:.75rem;
-  align-items:flex-end;flex-wrap:wrap;
-}
+/* BET CONTROLS */
+.bet-controls{padding:1.25rem 1.5rem;display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap}
 .bfield{flex:1;min-width:100px}
 .bfield label{font-family:var(--mono);font-size:.55rem;color:rgba(245,240,232,.35);letter-spacing:.12em;display:block;margin-bottom:.4rem;text-transform:uppercase}
-.bfield input{
-  width:100%;background:rgba(245,240,232,.04);
-  border:1px solid var(--border);color:var(--paper);
-  padding:.65rem .9rem;font-family:var(--mono);font-size:.78rem;
-  outline:none;transition:border-color .2s;
-}
+.bfield input{width:100%;background:rgba(245,240,232,.04);border:1px solid var(--border);color:var(--paper);padding:.65rem .9rem;font-family:var(--mono);font-size:.78rem;outline:none;transition:border-color .2s}
 .bfield input:focus{border-color:rgba(200,168,75,.5)}
-.bet-btn{
-  font-family:var(--mono);font-size:.65rem;font-weight:700;
-  letter-spacing:.12em;border:none;
-  padding:.72rem 1.6rem;cursor:crosshair;transition:all .2s;
-  white-space:nowrap;
-  clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);
-}
+.bet-btn{font-family:var(--mono);font-size:.65rem;font-weight:700;letter-spacing:.12em;border:none;padding:.72rem 1.6rem;cursor:crosshair;transition:all .2s;white-space:nowrap;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)}
 .bb-t{background:var(--true);color:#000}
 .bb-t:hover{box-shadow:0 0 24px var(--true-glow)}
 .bb-l{background:var(--lie);color:#fff}
 .bb-l:hover{box-shadow:0 0 24px var(--lie-glow)}
 .bet-btn:disabled{opacity:.3;cursor:not-allowed}
 
-/* verdict box */
-.verdict-wrap{
-  margin:1.5rem;border:1px solid var(--border2);
-  display:none;position:relative;overflow:hidden;
-}
+/* VERDICT */
+.verdict-wrap{margin:1.5rem;border:1px solid var(--border2);display:none;position:relative;overflow:hidden}
 .verdict-wrap.show{display:block}
-.verdict-wrap::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:1px;
-}
+.verdict-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:1px}
 .verdict-wrap.vv-true::before{background:linear-gradient(90deg,transparent,var(--true),transparent)}
 .verdict-wrap.vv-lie::before{background:linear-gradient(90deg,transparent,var(--lie),transparent)}
-.verdict-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:1rem 1.25rem;border-bottom:1px solid var(--border);
-}
+.verdict-head{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border)}
 .verdict-tag{font-family:var(--mono);font-size:.55rem;color:rgba(245,240,232,.35);letter-spacing:.15em}
 .verdict-result{font-family:var(--anton);font-size:2rem;letter-spacing:.05em}
 .vr-true{color:var(--true);text-shadow:0 0 20px var(--true-glow)}
@@ -477,55 +210,24 @@ nav{
 .conf-track{flex:1;height:2px;background:rgba(245,240,232,.08)}
 .conf-fill{height:100%;transition:width .8s cubic-bezier(.4,0,.2,1)}
 .conf-num{font-family:var(--mono);font-size:.68rem;min-width:36px;text-align:right}
-.reasoning-box{
-  font-family:var(--playfair);font-style:italic;
-  font-size:.88rem;color:rgba(245,240,232,.6);
-  line-height:1.8;padding:1rem 1.25rem;
-  background:rgba(245,240,232,.03);
-  border-left:2px solid currentColor;
-}
-.pool-row{
-  font-family:var(--mono);font-size:.6rem;
-  color:rgba(245,240,232,.3);margin-top:.75rem;
-  display:flex;justify-content:space-between;
-}
+.reasoning-box{font-family:var(--playfair);font-style:italic;font-size:.88rem;color:rgba(245,240,232,.6);line-height:1.8;padding:1rem 1.25rem;background:rgba(245,240,232,.03);border-left:2px solid currentColor}
+.pool-row{font-family:var(--mono);font-size:.6rem;color:rgba(245,240,232,.3);margin-top:.75rem;display:flex;justify-content:space-between}
 
-/* action bar */
-.action-bar{
-  padding:1rem 1.5rem;border-top:1px solid var(--border);
-  display:flex;gap:.75rem;flex-wrap:wrap;
-}
-.abar-btn{
-  font-family:var(--mono);font-size:.6rem;font-weight:700;
-  letter-spacing:.1em;border:none;padding:.6rem 1.2rem;
-  cursor:crosshair;transition:all .2s;
-}
-.ab-gold{
-  background:var(--gold);color:#000;
-  clip-path:polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%);
-}
+/* ACTIONS */
+.action-bar{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.75rem;flex-wrap:wrap}
+.abar-btn{font-family:var(--mono);font-size:.6rem;font-weight:700;letter-spacing:.1em;border:none;padding:.6rem 1.2rem;cursor:crosshair;transition:all .2s}
+.ab-gold{background:var(--gold);color:#000;clip-path:polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%)}
 .ab-gold:hover{box-shadow:0 0 20px var(--gold-dim)}
 .ab-ghost{background:transparent;color:rgba(245,240,232,.5);border:1px solid var(--border2)}
-.ab-ghost:hover{color:var(--paper);border-color:var(--border2)}
+.ab-ghost:hover{color:var(--paper)}
 .abar-btn:disabled{opacity:.3;cursor:not-allowed}
 
-/* ── TX LOG ───────────────────────────────────────────────── */
-.txlog{
-  margin-top:1.5rem;border:1px solid var(--border);
-  background:rgba(10,0,8,.5);
-}
-.txlog-top{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:.75rem 1.25rem;border-bottom:1px solid var(--border);
-}
+/* TX LOG */
+.txlog{margin-top:1.5rem;border:1px solid var(--border);background:rgba(10,0,8,.5)}
+.txlog-top{display:flex;justify-content:space-between;align-items:center;padding:.75rem 1.25rem;border-bottom:1px solid var(--border)}
 .txlog-title{font-family:var(--mono);font-size:.58rem;color:rgba(245,240,232,.3);letter-spacing:.15em;text-transform:uppercase}
 .txlog-ct{font-family:var(--mono);font-size:.58rem;color:var(--true)}
-.tx-entry{
-  display:flex;align-items:center;gap:.75rem;
-  padding:.55rem 1.25rem;border-bottom:1px solid var(--border);
-  font-family:var(--mono);font-size:.6rem;
-  animation:fadein .2s ease;
-}
+.tx-entry{display:flex;align-items:center;gap:.75rem;padding:.55rem 1.25rem;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:.6rem;animation:fadein .2s ease}
 .tx-entry:last-child{border-bottom:none}
 .txdot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 .txd-ok{background:var(--true)}.txd-pending{background:var(--gold);animation:pulse 1.2s infinite}
@@ -535,62 +237,31 @@ nav{
 .tx-hash a:hover{text-decoration:underline}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 
-/* ── WHY SECTION ──────────────────────────────────────────── */
+/* WHY */
 .why-section{border-top:1px solid var(--border)}
-.why-grid{
-  display:grid;grid-template-columns:repeat(2,1fr);
-  gap:1px;background:var(--border);
-  margin-top:3rem;max-width:800px;
-}
-.why-card{
-  padding:2.5rem 2rem;background:var(--ink);
-  transition:background .25s;
-}
+.why-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--border);margin-top:3rem;max-width:800px}
+.why-card{padding:2.5rem 2rem;background:var(--ink);transition:background .25s}
 .why-card:hover{background:rgba(245,240,232,.02)}
-.why-num{
-  font-family:var(--anton);font-size:3.5rem;
-  color:rgba(245,240,232,.06);line-height:1;margin-bottom:.75rem;
-}
-.why-title{
-  font-family:var(--anton);font-size:1rem;letter-spacing:.06em;
-  color:var(--paper);margin-bottom:.5rem;
-}
+.why-num{font-family:var(--anton);font-size:3.5rem;color:rgba(245,240,232,.06);line-height:1;margin-bottom:.75rem}
+.why-title{font-family:var(--anton);font-size:1rem;letter-spacing:.06em;color:var(--paper);margin-bottom:.5rem}
 .why-desc{font-size:.82rem;color:rgba(245,240,232,.45);line-height:1.75}
 .why-icon{font-size:1.5rem;margin-bottom:.75rem}
 
-/* ── NETWORK BOX ──────────────────────────────────────────── */
-.network-box{
-  border:1px solid var(--border2);padding:2rem;
-  margin:3rem 0;
-  background:linear-gradient(135deg,rgba(200,168,75,.04),transparent);
-  position:relative;
-}
-.network-box::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--gold),transparent);
-}
+/* NETWORK BOX */
+.network-box{border:1px solid var(--border2);padding:2rem;margin:3rem 0;background:linear-gradient(135deg,rgba(200,168,75,.04),transparent);position:relative}
+.network-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
 .net-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1.5rem;margin-top:1.25rem}
-.net-item{}
 .net-item-label{font-family:var(--mono);font-size:.55rem;color:rgba(245,240,232,.3);letter-spacing:.15em;text-transform:uppercase;margin-bottom:.3rem}
-.net-item-val{font-family:var(--mono);font-size:.75rem;color:var(--gold)}
+.net-item-val{font-family:var(--mono);font-size:.72rem;color:var(--gold);word-break:break-all}
 
-/* ── BANNER ───────────────────────────────────────────────── */
-.warn-banner{
-  display:none;background:rgba(200,168,75,.08);
-  border-bottom:1px solid rgba(200,168,75,.2);
-  padding:.75rem 2rem;font-family:var(--mono);
-  font-size:.65rem;color:var(--gold);letter-spacing:.06em;
-  text-align:center;position:relative;z-index:99;
-}
-.warn-banner.show{display:block}
+/* WARN BANNER */
+.warn-banner{display:none;background:rgba(200,168,75,.08);border-bottom:1px solid rgba(200,168,75,.2);padding:.75rem 2rem;font-family:var(--mono);font-size:.65rem;color:var(--gold);letter-spacing:.06em;text-align:center;position:relative;z-index:99}
+.warn-banner.show{display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap}
+.switch-btn{background:var(--gold);color:#000;border:none;padding:.35rem .9rem;font-family:var(--mono);font-size:.6rem;cursor:crosshair;font-weight:700;letter-spacing:.08em}
+.switch-btn:hover{opacity:.85}
 
-/* ── FOOTER ───────────────────────────────────────────────── */
-footer{
-  border-top:1px solid var(--border);
-  padding:2rem 2.5rem;
-  display:flex;align-items:center;justify-content:space-between;
-  flex-wrap:wrap;gap:1rem;position:relative;z-index:10;
-}
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:2rem 2.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;position:relative;z-index:10}
 .flogo{display:flex;align-items:center;gap:.75rem}
 .flogo-mark{font-family:var(--anton);font-size:1.2rem}
 .flogo-t{color:var(--true)}.flogo-l{color:var(--lie)}
@@ -599,38 +270,24 @@ footer{
 .flinks a:hover{color:var(--paper)}
 .fcopy{font-family:var(--mono);font-size:.58rem;color:rgba(245,240,232,.2)}
 
-/* ── SPINNER ──────────────────────────────────────────────── */
+/* SPINNER */
 .spin{display:inline-block;width:11px;height:11px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:sp .5s linear infinite;vertical-align:middle}
 @keyframes sp{to{transform:rotate(360deg)}}
 
-/* ── TOAST ────────────────────────────────────────────────── */
+/* TOAST */
 .toast-area{position:fixed;bottom:2rem;right:2rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem}
-.toast{
-  font-family:var(--mono);font-size:.65rem;
-  background:rgba(10,0,8,.95);border:1px solid var(--border2);
-  padding:.75rem 1.1rem;max-width:300px;
-  animation:fadein .2s ease;backdrop-filter:blur(12px);
-}
+.toast{font-family:var(--mono);font-size:.65rem;background:rgba(10,0,8,.95);border:1px solid var(--border2);padding:.75rem 1.1rem;max-width:300px;animation:fadein .2s ease;backdrop-filter:blur(12px)}
 .toast.ok{border-color:rgba(0,230,118,.4);color:var(--true)}
 .toast.err{border-color:rgba(255,23,68,.4);color:var(--lie)}
 .toast.info{border-color:rgba(200,168,75,.4);color:var(--gold)}
 
-/* ── RESPONSIVE ───────────────────────────────────────────── */
 @media(max-width:768px){
-  nav{padding:.8rem 1.2rem}
-  .nav-links{display:none}
-  .hero{padding:7rem 1.2rem 3rem}
-  .hero-bg-t,.hero-bg-l{display:none}
-  .stats-strip{grid-template-columns:1fr 1fr}
-  .how-grid{grid-template-columns:1fr}
-  .how-step{border-right:none;border-bottom:1px solid var(--border)}
-  .how-step::after{display:none}
-  .section{padding:4rem 1.2rem}
-  .game-section{padding:3rem 1.2rem}
-  .bet-sides{grid-template-columns:1fr}
-  .why-grid{grid-template-columns:1fr}
+  nav{padding:.8rem 1.2rem}.nav-links{display:none}
+  .hero{padding:7rem 1.2rem 3rem}.hero-bg-t,.hero-bg-l{display:none}
+  .how-grid{grid-template-columns:1fr}.how-step{border-right:none;border-bottom:1px solid var(--border)}.how-step::after{display:none}
+  .section{padding:4rem 1.2rem}.game-section{padding:3rem 1.2rem}
+  .bet-sides{grid-template-columns:1fr}.why-grid{grid-template-columns:1fr}
   footer{padding:1.5rem 1.2rem}
-  .stat-num{font-size:2rem}
 }
 </style>
 </head>
@@ -638,17 +295,17 @@ footer{
 
 <!-- MARQUEE -->
 <div class="marquee-top">
-  <div class="marquee-inner" id="marquee">
+  <div class="marquee-inner">
     <span class="marquee-item">STAKE GEN TOKENS ON THE TRUTH</span>
     <span class="marquee-item">5 LLM VALIDATORS JUDGE EVERY STATEMENT</span>
     <span class="marquee-item">WINNERS SPLIT THE POOL AUTOMATICALLY</span>
     <span class="marquee-item">NO HUMAN JUDGES · NO CENTRAL AUTHORITY</span>
-    <span class="marquee-item">BUILT ON GENLAYER BRADBURY TESTNET</span>
+    <span class="marquee-item">BUILT ON GENLAYER TESTNET BRADBURY</span>
     <span class="marquee-item">STAKE GEN TOKENS ON THE TRUTH</span>
     <span class="marquee-item">5 LLM VALIDATORS JUDGE EVERY STATEMENT</span>
     <span class="marquee-item">WINNERS SPLIT THE POOL AUTOMATICALLY</span>
     <span class="marquee-item">NO HUMAN JUDGES · NO CENTRAL AUTHORITY</span>
-    <span class="marquee-item">BUILT ON GENLAYER BRADBURY TESTNET</span>
+    <span class="marquee-item">BUILT ON GENLAYER TESTNET BRADBURY</span>
   </div>
 </div>
 
@@ -657,14 +314,10 @@ footer{
   <a class="logo" href="#">
     <div class="logo-mark">
       <svg viewBox="0 0 44 44" fill="none">
-        <!-- hexagon -->
         <polygon points="22,3 39,12.5 39,31.5 22,41 5,31.5 5,12.5" stroke="#c8a84b" stroke-width="1"/>
-        <!-- inner glow hex -->
         <polygon points="22,9 34,16 34,28 22,35 10,28 10,16" fill="rgba(200,168,75,0.06)"/>
-        <!-- T left, L right split -->
         <text x="13" y="28" font-family="Anton,sans-serif" font-size="16" fill="#00e676">T</text>
         <text x="24" y="28" font-family="Anton,sans-serif" font-size="16" fill="#ff1744">L</text>
-        <!-- corner dots -->
         <circle cx="22" cy="3" r="2" fill="#c8a84b"/>
         <circle cx="39" cy="12.5" r="1.5" fill="#c8a84b" opacity=".5"/>
         <circle cx="39" cy="31.5" r="1.5" fill="#c8a84b" opacity=".5"/>
@@ -678,26 +331,25 @@ footer{
       <span class="logo-lie">LIE</span>
     </div>
   </a>
-
   <div class="nav-links">
     <a href="#how">How it works</a>
     <a href="#game">Play</a>
     <a href="#why">Why GenLayer</a>
     <a href="https://github.com/kmgdz/truth-or-lie" target="_blank">GitHub</a>
   </div>
-
   <button class="wallet-pill" id="wallet-pill" onclick="connectWallet()">
     <div class="wpill-dot" id="wpill-dot"></div>
     <div>
       <div class="wpill-text" id="wpill-text">CONNECT WALLET</div>
-      <div class="wpill-net">BRADBURY TESTNET</div>
+      <div class="wpill-net">TESTNET BRADBURY</div>
     </div>
   </button>
 </nav>
 
 <!-- WARN BANNER -->
 <div class="warn-banner" id="warn-banner">
-  ⚠ &nbsp; Connect MetaMask + add GenLayer Bradbury Testnet to play on-chain
+  <span id="warn-msg">Connect MetaMask and switch to GenLayer Testnet Bradbury to play on-chain</span>
+  <button class="switch-btn" id="switch-net-btn" onclick="handleSwitchNetwork()" style="display:none">SWITCH NETWORK</button>
 </div>
 
 <!-- HERO -->
@@ -721,26 +373,6 @@ footer{
     <a href="#game" class="btn-lie">STAKE ON LIE</a>
   </div>
 </section>
-
-<!-- STATS -->
-<div class="stats-strip">
-  <div class="stat-box">
-    <div class="stat-num" id="s1">47</div>
-    <div class="stat-label">Rounds Played</div>
-  </div>
-  <div class="stat-box">
-    <div class="stat-num" id="s2">12,840</div>
-    <div class="stat-label">GEN Staked Total</div>
-  </div>
-  <div class="stat-box">
-    <div class="stat-num" id="s3">203</div>
-    <div class="stat-label">Players</div>
-  </div>
-  <div class="stat-box">
-    <div class="stat-num" id="s4">91%</div>
-    <div class="stat-label">Validator Accuracy</div>
-  </div>
-</div>
 
 <!-- HOW IT WORKS -->
 <section class="section how-section" id="how">
@@ -785,9 +417,8 @@ footer{
 <div class="game-section" id="game">
   <div class="sec-label" style="margin-bottom:1.5rem">Live Game</div>
 
-  <!-- LOADER -->
   <div class="loader-card">
-    <div class="loader-label">Load Contract · Bradbury Testnet</div>
+    <div class="loader-label">Load Contract · Testnet Bradbury</div>
     <div class="loader-row">
       <div class="linput-wrap">
         <label class="linput-label">Contract Address</label>
@@ -802,18 +433,15 @@ footer{
     </div>
   </div>
 
-  <!-- GAME CARD -->
   <div class="game-card">
     <div class="gc-top">
       <span class="gc-addr" id="gc-addr">NO CONTRACT LOADED</span>
       <span class="gc-pill gp-open" id="gc-pill">OPEN</span>
     </div>
-
     <div class="stmt-area">
       <div class="stmt-eyebrow">◆ Verify This Statement</div>
       <div class="stmt-text" id="stmt-text">Load a contract above to see the statement</div>
     </div>
-
     <div class="vs-row">
       <div class="vs-side vs-t">
         <div class="vs-side-lbl">TRUE POOL</div>
@@ -825,7 +453,6 @@ footer{
         <div class="vs-side-amt" id="vs-lie">0 GEN</div>
       </div>
     </div>
-
     <div class="vbar-wrap">
       <div class="vbar-track">
         <div class="vbar-true" id="vb-t" style="width:50%"></div>
@@ -836,7 +463,6 @@ footer{
         <span class="vbp l"><span id="pct-l">50%</span> LIE</span>
       </div>
     </div>
-
     <div class="bet-sides">
       <div class="bside ts" id="bside-t" onclick="selectSide('true')">
         <div class="bside-icon">✓</div>
@@ -849,7 +475,6 @@ footer{
         <div class="bside-odds" id="odds-l">— payout</div>
       </div>
     </div>
-
     <div class="bet-controls">
       <div class="bfield">
         <label>Amount (GEN)</label>
@@ -861,8 +486,6 @@ footer{
       </div>
       <button class="bet-btn bb-t" id="place-btn" onclick="placeBet()" disabled>SELECT A SIDE</button>
     </div>
-
-    <!-- VERDICT -->
     <div class="verdict-wrap" id="verdict-wrap">
       <div class="verdict-head">
         <span class="verdict-tag">◆ MULTI-LLM CONSENSUS VERDICT</span>
@@ -881,7 +504,6 @@ footer{
         </div>
       </div>
     </div>
-
     <div class="action-bar">
       <button class="abar-btn ab-gold" id="judge-btn" onclick="judgeStatement()" disabled>⚡ TRIGGER AI JUDGMENT</button>
       <button class="abar-btn ab-ghost" id="refresh-btn" onclick="refreshState()" disabled>↻ REFRESH</button>
@@ -903,33 +525,41 @@ footer{
     </div>
   </div>
 
-  <!-- NETWORK INFO -->
+  <!-- NETWORK INFO — all values from official docs -->
   <div class="network-box">
-    <div class="loader-label">Network Details · GenLayer Bradbury Testnet</div>
+    <div class="loader-label">Network Details · GenLayer Testnet Bradbury</div>
     <div class="net-grid">
       <div class="net-item">
         <div class="net-item-label">Chain ID</div>
-        <div class="net-item-val">8093 (0x1F9D)</div>
+        <div class="net-item-val">4221 (0x107D)</div>
       </div>
       <div class="net-item">
-        <div class="net-item-label">RPC URL</div>
-        <div class="net-item-val">rpc.bradbury.genlayer.com</div>
+        <div class="net-item-label">GenLayer RPC</div>
+        <div class="net-item-val">rpc-bradbury.genlayer.com</div>
+      </div>
+      <div class="net-item">
+        <div class="net-item-label">Chain RPC</div>
+        <div class="net-item-val">rpc.testnet-chain.genlayer.com</div>
       </div>
       <div class="net-item">
         <div class="net-item-label">Symbol</div>
         <div class="net-item-val">GEN</div>
       </div>
       <div class="net-item">
-        <div class="net-item-label">Contract</div>
-        <div class="net-item-val" style="font-size:.65rem">0x155c...375E4</div>
+        <div class="net-item-label">Explorer</div>
+        <div class="net-item-val">explorer-bradbury.genlayer.com</div>
       </div>
       <div class="net-item">
         <div class="net-item-label">Faucet</div>
         <div class="net-item-val">testnet-faucet.genlayer.foundation</div>
       </div>
       <div class="net-item">
-        <div class="net-item-label">Explorer</div>
-        <div class="net-item-val">explorer-studio.genlayer.com</div>
+        <div class="net-item-label">Contract</div>
+        <div class="net-item-val" id="disp-contract">0x155c...375E4</div>
+      </div>
+      <div class="net-item">
+        <div class="net-item-label">Docs</div>
+        <div class="net-item-val">docs.genlayer.com</div>
       </div>
     </div>
   </div>
@@ -989,347 +619,472 @@ footer{
     <a href="https://portal.genlayer.foundation" target="_blank">Builder Portal</a>
     <a href="https://studio.genlayer.com" target="_blank">Studio</a>
   </div>
-  <div class="fcopy">Built by @kmgdz · GenLayer Bradbury Testnet</div>
+  <div class="fcopy">Built by @kmgdz · GenLayer Testnet Bradbury</div>
 </footer>
 
 <div class="toast-area" id="toasts"></div>
 
 <script>
-// ── NETWORK CONFIG
-const CHAIN_ID = '0x1F9D';
-const RPC = 'https://rpc.bradbury.genlayer.com';
-const EXPLORER = 'https://explorer-studio.genlayer.com';
+// ─────────────────────────────────────────────────────────────────
+// NETWORK CONFIG — verified from docs.genlayer.com/developers/networks
+// GenLayer RPC = handles gen_* + passes through eth_* (wallet connects here)
+// Chain RPC    = underlying L2 zkSync chain (direct EVM access)
+// ─────────────────────────────────────────────────────────────────
+const CHAIN_ID     = '0x107d';   // 4221 decimal
+const GENLAYER_RPC = 'https://rpc-bradbury.genlayer.com';
+const CHAIN_RPC    = 'https://rpc.testnet-chain.genlayer.com';
+const EXPLORER     = 'https://explorer-bradbury.genlayer.com';
 const CHAIN_PARAMS = {
   chainId: CHAIN_ID,
-  chainName: 'GenLayer Bradbury Testnet',
-  nativeCurrency:{name:'GEN',symbol:'GEN',decimals:18},
-  rpcUrls:[RPC],
-  blockExplorerUrls:[EXPLORER],
+  chainName: 'GenLayer Testnet Bradbury',
+  nativeCurrency: { name: 'GEN', symbol: 'GEN', decimals: 18 },
+  rpcUrls: [GENLAYER_RPC],
+  blockExplorerUrls: [EXPLORER],
 };
 
 // ── STATE
-let walletAddr = null;
+let walletAddr   = null;
 let contractAddr = '0x155c991fEdb92e50056B34EC639934be793375E4';
 let selectedSide = null;
-let gameStatus = 'open';
+let gameStatus   = 'open';
 let trueAmt = 0, lieAmt = 0;
 let txCount = 0;
 
-// ── WALLET
+// ─────────────────────────────────────────────────────────────────
+// WALLET
+// ─────────────────────────────────────────────────────────────────
 async function connectWallet() {
   if (!window.ethereum) {
     toast('MetaMask not found — install at metamask.io', 'err');
     return;
   }
   try {
-    const accounts = await window.ethereum.request({method:'eth_requestAccounts'});
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
     walletAddr = accounts[0];
     await ensureNetwork();
     onConnected();
-  } catch(e) {
-    toast('Connection cancelled', 'err');
+  } catch (e) {
+    if (e.code === 4001) toast('Connection rejected by user', 'err');
+    else toast('Connection failed: ' + (e.message || e), 'err');
+  }
+}
+
+async function handleSwitchNetwork() {
+  try {
+    await ensureNetwork();
+    toast('Switched to GenLayer Testnet Bradbury!', 'ok');
+    checkNetwork();
+  } catch (e) {
+    if (e.code === 4001) toast('Network switch rejected', 'err');
+    else toast('Could not switch: ' + (e.message || e), 'err');
   }
 }
 
 async function ensureNetwork() {
+  const current = await window.ethereum.request({ method: 'eth_chainId' });
+  if (current.toLowerCase() === CHAIN_ID.toLowerCase()) return;
   try {
     await window.ethereum.request({
-      method:'wallet_switchEthereumChain',
-      params:[{chainId:CHAIN_ID}]
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: CHAIN_ID }],
     });
-  } catch(e) {
-    if (e.code === 4902) {
+  } catch (e) {
+    if (e.code === 4902 || e.code === -32603) {
       await window.ethereum.request({
-        method:'wallet_addEthereumChain',
-        params:[CHAIN_PARAMS]
+        method: 'wallet_addEthereumChain',
+        params: [CHAIN_PARAMS],
       });
-    }
+    } else throw e;
   }
+  // Verify switch succeeded
+  const after = await window.ethereum.request({ method: 'eth_chainId' });
+  if (after.toLowerCase() !== CHAIN_ID.toLowerCase()) {
+    throw new Error('Network switch was not applied');
+  }
+}
+
+async function checkNetwork() {
+  if (!window.ethereum) {
+    showBanner('Install MetaMask to play on-chain', false);
+    return;
+  }
+  try {
+    const cid = await window.ethereum.request({ method: 'eth_chainId' });
+    const onCorrectNet = cid.toLowerCase() === CHAIN_ID.toLowerCase();
+    if (!walletAddr) {
+      showBanner('Connect MetaMask to play on-chain', false);
+    } else if (!onCorrectNet) {
+      showBanner('Wrong network — switch to GenLayer Testnet Bradbury', true);
+    } else {
+      hideBanner();
+    }
+  } catch {}
+}
+
+function showBanner(msg, showSwitchBtn) {
+  document.getElementById('warn-msg').textContent = msg;
+  document.getElementById('switch-net-btn').style.display = showSwitchBtn ? 'inline-block' : 'none';
+  document.getElementById('warn-banner').classList.add('show');
+}
+
+function hideBanner() {
+  document.getElementById('warn-banner').classList.remove('show');
 }
 
 function onConnected() {
   const pill = document.getElementById('wallet-pill');
   pill.classList.add('live');
-  document.getElementById('wpill-dot').style.cssText = '';
-  document.getElementById('wpill-text').textContent = walletAddr.slice(0,6)+'...'+walletAddr.slice(-4);
-  document.getElementById('wallet-display').value = walletAddr.slice(0,10)+'...'+walletAddr.slice(-6);
-  document.getElementById('warn-banner').classList.remove('show');
+  document.getElementById('wpill-text').textContent = walletAddr.slice(0,6) + '...' + walletAddr.slice(-4);
+  document.getElementById('wallet-display').value = walletAddr.slice(0,10) + '...' + walletAddr.slice(-6);
   toast('Wallet connected!', 'ok');
-  logTx('ok', 'Connected: '+walletAddr, '');
+  logTx('ok', 'Connected: ' + walletAddr, '');
+  checkNetwork();
 
   window.ethereum.on('accountsChanged', accs => {
     walletAddr = accs[0] || null;
     if (walletAddr) {
-      document.getElementById('wpill-text').textContent = walletAddr.slice(0,6)+'...'+walletAddr.slice(-4);
-      document.getElementById('wallet-display').value = walletAddr.slice(0,10)+'...'+walletAddr.slice(-6);
+      document.getElementById('wpill-text').textContent = walletAddr.slice(0,6) + '...' + walletAddr.slice(-4);
+      document.getElementById('wallet-display').value = walletAddr.slice(0,10) + '...' + walletAddr.slice(-6);
     } else {
       document.getElementById('wallet-pill').classList.remove('live');
       document.getElementById('wpill-text').textContent = 'CONNECT WALLET';
       document.getElementById('wallet-display').value = '';
-      document.getElementById('warn-banner').classList.add('show');
     }
+    checkNetwork();
   });
+
+  window.ethereum.on('chainChanged', () => checkNetwork());
 }
 
-// ── CONTRACT LOAD
+// ─────────────────────────────────────────────────────────────────
+// CONTRACT — load & read
+// ─────────────────────────────────────────────────────────────────
 async function loadContract() {
   const addr = document.getElementById('contract-input').value.trim();
-  if (!addr.startsWith('0x')) { toast('Invalid address', 'err'); return; }
+  if (!addr.startsWith('0x') || addr.length < 20) {
+    toast('Enter a valid 0x contract address', 'err');
+    return;
+  }
   contractAddr = addr;
+
+  // FIX: populate contract display in network box immediately
+  document.getElementById('disp-contract').textContent = addr.slice(0,10) + '...' + addr.slice(-6);
+
   setBtnLoad('load-btn', true, 'LOADING...');
   try {
     const raw = await viewCall('get_game_summary', []);
     const data = JSON.parse(raw);
-    document.getElementById('gc-addr').textContent = addr.slice(0,14)+'...'+addr.slice(-6);
-    document.getElementById('stmt-text').textContent = data.statement || 'No statement';
-    trueAmt = Number(data.total_true)||0;
-    lieAmt  = Number(data.total_lie)||0;
-    gameStatus = data.status||'open';
+
+    document.getElementById('gc-addr').textContent = addr.slice(0,14) + '...' + addr.slice(-6);
+    document.getElementById('stmt-text').textContent = data.statement || 'No statement found';
+
+    trueAmt   = Number(data.total_true) || 0;
+    lieAmt    = Number(data.total_lie)  || 0;
+    gameStatus = data.status || 'open';
+
     updateBar();
     setStatus(gameStatus);
     document.getElementById('refresh-btn').disabled = false;
-    if (gameStatus==='open') document.getElementById('judge-btn').disabled=false;
-    if (gameStatus==='settled') { await showVerdict(); document.getElementById('claim-btn').style.display='inline-block'; }
+    if (gameStatus === 'open')     document.getElementById('judge-btn').disabled = false;
+    if (gameStatus === 'settled') { await showVerdict(); document.getElementById('claim-btn').style.display = 'inline-block'; }
+
     toast('Game loaded from chain!', 'ok');
-    logTx('ok', 'Contract loaded: '+addr.slice(0,14)+'...', '');
-  } catch(e) {
-    toast('Load failed: '+(e.message||e), 'err');
-    logTx('err', 'Load failed: '+(e.message||''), '');
+    logTx('ok', 'Contract loaded: ' + addr.slice(0,14) + '...', '');
+  } catch (e) {
+    toast('Load failed: ' + (e.message || e), 'err');
+    logTx('err', 'Load failed: ' + (e.message || ''), '');
   }
   setBtnLoad('load-btn', false, 'LOAD GAME');
 }
 
-// ── RPC CALLS
-async function viewCall(method, args=[]) {
+// ─────────────────────────────────────────────────────────────────
+// RPC — view call (read, no wallet needed)
+// Uses GenLayer RPC which handles both gen_* and eth_* calls
+// ─────────────────────────────────────────────────────────────────
+async function viewCall(method, args = []) {
   const data = encodeCall(method, args);
-  const body = {jsonrpc:'2.0',id:Date.now(),method:'eth_call',params:[{to:contractAddr,data},'latest']};
-  const res = await fetch(RPC, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const body = {
+    jsonrpc: '2.0', id: Date.now(),
+    method: 'eth_call',
+    params: [{ to: contractAddr, data }, 'latest'],
+  };
+  const res = await fetch(GENLAYER_RPC, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error('RPC request failed: HTTP ' + res.status);
   const json = await res.json();
-  if (json.error) throw new Error(json.error.message);
+  if (json.error) throw new Error(json.error.message || JSON.stringify(json.error));
   return hexToStr(json.result);
 }
 
-async function sendTx(method, args=[], valueGEN=0) {
-  if (!walletAddr) { toast('Connect wallet first','info'); document.getElementById('warn-banner').classList.add('show'); return null; }
+// ─────────────────────────────────────────────────────────────────
+// SEND TX — write call (needs wallet + correct network)
+// ─────────────────────────────────────────────────────────────────
+async function sendTx(method, args = [], valueGEN = 0) {
+  if (!walletAddr) {
+    showBanner('Connect MetaMask to play on-chain', false);
+    toast('Connect your wallet first', 'info');
+    return null;
+  }
   await ensureNetwork();
   const data = encodeCall(method, args);
-  const tx = {from:walletAddr, to:contractAddr, data, gas:'0x493E0'};
-  if (valueGEN>0) { const w=BigInt(Math.floor(valueGEN*1e18)); tx.value='0x'+w.toString(16); }
-  return await window.ethereum.request({method:'eth_sendTransaction',params:[tx]});
+  const tx = { from: walletAddr, to: contractAddr, data, gas: '0x493E0' };
+  if (valueGEN > 0) {
+    const wei = BigInt(Math.floor(valueGEN * 1e18));
+    tx.value = '0x' + wei.toString(16);
+  }
+  return await window.ethereum.request({ method: 'eth_sendTransaction', params: [tx] });
 }
 
+// ─────────────────────────────────────────────────────────────────
+// ENCODE / DECODE
+// GenLayer accepts method calls as JSON-encoded byte strings
+// ─────────────────────────────────────────────────────────────────
 function encodeCall(method, args) {
-  const str = JSON.stringify({method, args});
-  return '0x'+[...new TextEncoder().encode(str)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  const str = JSON.stringify({ method, args });
+  return '0x' + [...new TextEncoder().encode(str)]
+    .map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 function hexToStr(hex) {
-  if (!hex||hex==='0x'||hex==='0x0') return '';
+  if (!hex || hex === '0x' || hex === '0x0') return '';
   try {
-    const bytes = hex.replace('0x','').match(/.{1,2}/g).map(b=>parseInt(b,16));
+    const bytes = hex.replace('0x', '').match(/.{1,2}/g).map(b => parseInt(b, 16));
     return new TextDecoder().decode(new Uint8Array(bytes));
   } catch { return hex; }
 }
 
-// ── GAME ACTIONS
+// ─────────────────────────────────────────────────────────────────
+// GAME ACTIONS
+// ─────────────────────────────────────────────────────────────────
 function selectSide(side) {
-  if (gameStatus!=='open') { toast('Betting is closed','info'); return; }
+  if (gameStatus !== 'open') { toast('Betting is closed for this round', 'info'); return; }
   selectedSide = side;
-  document.getElementById('bside-t').classList.toggle('sel', side==='true');
-  document.getElementById('bside-l').classList.toggle('sel', side==='lie');
+  document.getElementById('bside-t').classList.toggle('sel', side === 'true');
+  document.getElementById('bside-l').classList.toggle('sel', side === 'lie');
   const btn = document.getElementById('place-btn');
   btn.disabled = false;
-  btn.className = 'bet-btn '+(side==='true'?'bb-t':'bb-l');
-  btn.textContent = 'STAKE ON '+(side==='true'?'TRUTH':'LIE')+' →';
+  btn.className = 'bet-btn ' + (side === 'true' ? 'bb-t' : 'bb-l');
+  btn.textContent = 'STAKE ON ' + (side === 'true' ? 'TRUTH' : 'LIE') + ' →';
 }
 
 async function placeBet() {
-  if (!selectedSide) { toast('Select TRUE or LIE','info'); return; }
-  if (!walletAddr)   { toast('Connect wallet first','info'); document.getElementById('warn-banner').classList.add('show'); return; }
-  const amt = parseFloat(document.getElementById('bet-amt').value)||10;
+  if (!selectedSide) { toast('Select TRUE or LIE first', 'info'); return; }
+  if (!walletAddr)   { toast('Connect wallet first', 'info'); checkNetwork(); return; }
+  const amt = parseFloat(document.getElementById('bet-amt').value) || 10;
   setBtnLoad('place-btn', true, 'SENDING TX...');
-  logTx('pending', 'Placing bet: '+amt+' GEN on '+selectedSide.toUpperCase(), '');
+  logTx('pending', 'Placing bet: ' + amt + ' GEN on ' + selectedSide.toUpperCase(), '');
   try {
-    const txHash = await sendTx('place_bet',[selectedSide],amt);
-    if (!txHash) throw new Error('Rejected');
-    toast('Bet sent! TX: '+txHash.slice(0,12)+'...', 'ok');
-    logTx('ok', 'Bet: '+amt+' GEN on '+selectedSide.toUpperCase(), txHash);
-    if (selectedSide==='true') trueAmt+=amt; else lieAmt+=amt;
+    const txHash = await sendTx('place_bet', [selectedSide], amt);
+    if (!txHash) throw new Error('TX rejected');
+    toast('Bet sent! TX: ' + txHash.slice(0,12) + '...', 'ok');
+    logTx('ok', 'Bet: ' + amt + ' GEN on ' + selectedSide.toUpperCase(), txHash);
+    if (selectedSide === 'true') trueAmt += amt;
+    else lieAmt += amt;
     updateBar();
     setTimeout(refreshState, 4000);
-  } catch(e) {
-    toast('Bet failed: '+(e.message||e), 'err');
-    logTx('err', 'Bet failed: '+(e.message||''), '');
+  } catch (e) {
+    toast('Bet failed: ' + (e.message || e), 'err');
+    logTx('err', 'Bet failed: ' + (e.message || ''), '');
   }
-  setBtnLoad('place-btn', false, 'STAKE ON '+(selectedSide||'TRUE').toUpperCase()+' →');
+  setBtnLoad('place-btn', false, 'STAKE ON ' + (selectedSide || 'TRUE').toUpperCase() + ' →');
 }
 
 async function judgeStatement() {
-  if (!walletAddr) { toast('Connect wallet first','info'); document.getElementById('warn-banner').classList.add('show'); return; }
+  if (!walletAddr) { toast('Connect wallet first', 'info'); checkNetwork(); return; }
   setBtnLoad('judge-btn', true, 'SENDING TX...');
   logTx('pending', 'Closing betting...', '');
   try {
-    const closeTx = await sendTx('close_betting',[]);
-    if (closeTx) { logTx('ok','Betting closed',closeTx); toast('Betting closed. Triggering evaluation...','info'); }
+    const closeTx = await sendTx('close_betting', []);
+    if (closeTx) {
+      logTx('ok', 'Betting closed', closeTx);
+      toast('Betting closed. Triggering AI evaluation...', 'info');
+    }
     await sleep(2000);
-    const judgeTx = await sendTx('judge_statement',[]);
-    if (!judgeTx) throw new Error('Rejected');
+    const judgeTx = await sendTx('judge_statement', []);
+    if (!judgeTx) throw new Error('Judgment TX rejected');
     setStatus('judging');
     logTx('pending', 'LLMs evaluating statement... (30–90s)', judgeTx);
     toast('5 LLM validators are researching the statement...', 'info');
     pollVerdict(judgeTx);
-  } catch(e) {
-    toast('Failed: '+(e.message||e), 'err');
-    logTx('err', 'Judgment failed: '+(e.message||''), '');
+  } catch (e) {
+    toast('Failed: ' + (e.message || e), 'err');
+    logTx('err', 'Judgment failed: ' + (e.message || ''), '');
     setBtnLoad('judge-btn', false, '⚡ TRIGGER AI JUDGMENT');
   }
 }
 
 async function pollVerdict(txHash) {
-  let tries=0;
+  let tries = 0;
   const poll = async () => {
     tries++;
     try {
-      const raw = await viewCall('get_game_summary',[]);
+      const raw = await viewCall('get_game_summary', []);
       const data = JSON.parse(raw);
-      if (data.status==='settled') {
-        trueAmt=Number(data.total_true)||trueAmt;
-        lieAmt=Number(data.total_lie)||lieAmt;
-        updateBar(); setStatus('settled');
+      if (data.status === 'settled') {
+        trueAmt = Number(data.total_true) || trueAmt;
+        lieAmt  = Number(data.total_lie)  || lieAmt;
+        updateBar();
+        setStatus('settled');
         await showVerdict();
-        document.getElementById('claim-btn').style.display='inline-block';
-        document.getElementById('judge-btn').textContent='✓ JUDGED';
-        logTx('ok','Verdict: '+(data.verdict||'?').toUpperCase(),txHash);
-        toast('Verdict is in! Check below.','ok');
+        document.getElementById('claim-btn').style.display = 'inline-block';
+        document.getElementById('judge-btn').textContent = '✓ JUDGED';
+        logTx('ok', 'Verdict: ' + (data.verdict || '?').toUpperCase(), txHash);
+        toast('Verdict is in! Check below.', 'ok');
         return;
       }
-    } catch{}
-    if (tries<24) setTimeout(poll,5000);
-    else { toast('Still processing — try refreshing','info'); setBtnLoad('judge-btn',false,'⚡ TRIGGER AI JUDGMENT'); }
+    } catch {}
+    if (tries < 24) setTimeout(poll, 5000);
+    else {
+      toast('Still processing — try refreshing in a minute', 'info');
+      setBtnLoad('judge-btn', false, '⚡ TRIGGER AI JUDGMENT');
+    }
   };
-  setTimeout(poll,6000);
+  setTimeout(poll, 6000);
 }
 
 async function showVerdict() {
   try {
-    const raw = await viewCall('get_verdict',[]);
+    const raw = await viewCall('get_verdict', []);
     const data = JSON.parse(raw);
     if (data.error) return;
-    const v=(data.verdict||'').toLowerCase();
-    const c=Number(data.confidence)||0;
-    const r=data.reasoning||'No reasoning provided';
-    const total=(Number(data.total_true)||0)+(Number(data.total_lie)||0);
-    const vw=document.getElementById('verdict-wrap');
+    const v     = (data.verdict || '').toLowerCase();
+    const c     = Number(data.confidence) || 0;
+    const r     = data.reasoning || 'No reasoning provided';
+    const total = (Number(data.total_true) || 0) + (Number(data.total_lie) || 0);
+    const vw = document.getElementById('verdict-wrap');
     vw.classList.add('show');
-    vw.className='verdict-wrap show '+(v==='true'?'vv-true':v==='lie'?'vv-lie':'');
-    const vr=document.getElementById('verdict-result');
-    vr.textContent=v.toUpperCase();
-    vr.className='verdict-result '+(v==='true'?'vr-true':v==='lie'?'vr-lie':'vr-uncertain');
-    const fc=document.getElementById('conf-fill');
-    const col=v==='true'?'var(--true)':v==='lie'?'var(--lie)':'var(--gold)';
-    fc.style.cssText='width:'+c+'%;background:'+col;
-    document.getElementById('conf-num').style.color=col;
-    document.getElementById('conf-num').textContent=c+'%';
-    document.getElementById('reasoning-box').textContent=r;
-    document.getElementById('reasoning-box').style.borderLeftColor=col;
-    document.getElementById('pool-info-left').textContent='Winner: '+v.toUpperCase()+' side';
-    document.getElementById('pool-info-right').textContent=total+' GEN pool total';
-  } catch(e) { console.error('showVerdict:',e); }
+    vw.className = 'verdict-wrap show ' + (v === 'true' ? 'vv-true' : v === 'lie' ? 'vv-lie' : '');
+    const vr = document.getElementById('verdict-result');
+    vr.textContent = v.toUpperCase();
+    vr.className = 'verdict-result ' + (v === 'true' ? 'vr-true' : v === 'lie' ? 'vr-lie' : 'vr-uncertain');
+    const col = v === 'true' ? 'var(--true)' : v === 'lie' ? 'var(--lie)' : 'var(--gold)';
+    document.getElementById('conf-fill').style.cssText = 'width:' + c + '%;background:' + col;
+    document.getElementById('conf-num').style.color = col;
+    document.getElementById('conf-num').textContent = c + '%';
+    document.getElementById('reasoning-box').textContent = r;
+    document.getElementById('reasoning-box').style.borderLeftColor = col;
+    document.getElementById('pool-info-left').textContent  = 'Winner: ' + v.toUpperCase() + ' side';
+    document.getElementById('pool-info-right').textContent = total + ' GEN pool total';
+  } catch (e) { console.error('showVerdict:', e); }
 }
 
 async function claimWinnings() {
-  if (!walletAddr) { toast('Connect wallet first','info'); return; }
-  setBtnLoad('claim-btn',true,'CLAIMING...');
-  logTx('pending','Claiming winnings...','');
+  if (!walletAddr) { toast('Connect wallet first', 'info'); return; }
+  setBtnLoad('claim-btn', true, 'CLAIMING...');
+  logTx('pending', 'Claiming winnings...', '');
   try {
-    const txHash=await sendTx('claim_winnings',[]);
-    if (txHash) { toast('Claimed! TX: '+txHash.slice(0,12)+'...','ok'); logTx('ok','Winnings claimed',txHash); }
-  } catch(e) { toast('Claim failed: '+(e.message||e),'err'); logTx('err','Claim failed',''); }
-  setBtnLoad('claim-btn',false,'🏆 CLAIM WINNINGS');
+    const txHash = await sendTx('claim_winnings', []);
+    if (txHash) {
+      toast('Claimed! TX: ' + txHash.slice(0,12) + '...', 'ok');
+      logTx('ok', 'Winnings claimed', txHash);
+    }
+  } catch (e) {
+    toast('Claim failed: ' + (e.message || e), 'err');
+    logTx('err', 'Claim failed: ' + (e.message || ''), '');
+  }
+  setBtnLoad('claim-btn', false, '🏆 CLAIM WINNINGS');
 }
 
 async function refreshState() {
   if (!contractAddr) return;
   try {
-    const raw=await viewCall('get_game_summary',[]);
-    const data=JSON.parse(raw);
-    trueAmt=Number(data.total_true)||0;
-    lieAmt=Number(data.total_lie)||0;
-    gameStatus=data.status||'open';
-    document.getElementById('stmt-text').textContent=data.statement||'';
-    updateBar(); setStatus(gameStatus);
-    if (gameStatus==='settled') await showVerdict();
-    toast('Refreshed from chain','ok');
-  } catch(e) { toast('Refresh failed: '+(e.message||e),'err'); }
+    const raw = await viewCall('get_game_summary', []);
+    const data = JSON.parse(raw);
+    trueAmt    = Number(data.total_true) || 0;
+    lieAmt     = Number(data.total_lie)  || 0;
+    gameStatus = data.status || 'open';
+    document.getElementById('stmt-text').textContent = data.statement || '';
+    updateBar();
+    setStatus(gameStatus);
+    if (gameStatus === 'settled') await showVerdict();
+    toast('Refreshed from chain', 'ok');
+  } catch (e) { toast('Refresh failed: ' + (e.message || e), 'err'); }
 }
 
-// ── UI HELPERS
+// ─────────────────────────────────────────────────────────────────
+// UI HELPERS
+// ─────────────────────────────────────────────────────────────────
 function updateBar() {
-  const total=trueAmt+lieAmt||1;
-  const tp=Math.round(trueAmt/total*100);
-  const lp=100-tp;
-  document.getElementById('pct-t').textContent=tp+'%';
-  document.getElementById('pct-l').textContent=lp+'%';
-  document.getElementById('vb-t').style.width=tp+'%';
-  document.getElementById('vb-l').style.width=lp+'%';
-  document.getElementById('vs-true').textContent=trueAmt+' GEN';
-  document.getElementById('vs-lie').textContent=lieAmt+' GEN';
-  document.getElementById('odds-t').textContent=trueAmt>0?(total/trueAmt).toFixed(2)+'x payout':'— payout';
-  document.getElementById('odds-l').textContent=lieAmt>0?(total/lieAmt).toFixed(2)+'x payout':'— payout';
+  const total = trueAmt + lieAmt || 1;
+  const tp = Math.round(trueAmt / total * 100);
+  const lp = 100 - tp;
+  document.getElementById('pct-t').textContent = tp + '%';
+  document.getElementById('pct-l').textContent = lp + '%';
+  document.getElementById('vb-t').style.width  = tp + '%';
+  document.getElementById('vb-l').style.width  = lp + '%';
+  document.getElementById('vs-true').textContent = trueAmt + ' GEN';
+  document.getElementById('vs-lie').textContent  = lieAmt  + ' GEN';
+  document.getElementById('odds-t').textContent  = trueAmt > 0 ? (total/trueAmt).toFixed(2) + 'x payout' : '— payout';
+  document.getElementById('odds-l').textContent  = lieAmt  > 0 ? (total/lieAmt).toFixed(2)  + 'x payout' : '— payout';
 }
 
 function setStatus(s) {
-  gameStatus=s;
-  const pill=document.getElementById('gc-pill');
-  pill.className='gc-pill '+({open:'gp-open',judging:'gp-judging',settled:'gp-settled'}[s]||'gp-open');
-  pill.textContent={open:'OPEN',judging:'JUDGING...',settled:'SETTLED'}[s]||s.toUpperCase();
-  document.getElementById('judge-btn').disabled=s!=='open';
+  gameStatus = s;
+  const pill = document.getElementById('gc-pill');
+  pill.className = 'gc-pill ' + ({ open:'gp-open', judging:'gp-judging', settled:'gp-settled' }[s] || 'gp-open');
+  pill.textContent = { open:'OPEN', judging:'JUDGING...', settled:'SETTLED' }[s] || s.toUpperCase();
+  document.getElementById('judge-btn').disabled = s !== 'open';
 }
 
-function setBtnLoad(id,loading,text) {
-  const btn=document.getElementById(id);
+function setBtnLoad(id, loading, text) {
+  const btn = document.getElementById(id);
   if (!btn) return;
-  btn.disabled=loading;
-  btn.innerHTML=loading?'<span class="spin"></span> '+text:text;
+  btn.disabled = loading;
+  btn.innerHTML = loading ? '<span class="spin"></span> ' + text : text;
 }
 
-function logTx(type,msg,hash) {
+function logTx(type, msg, hash) {
   txCount++;
-  document.getElementById('tx-ct').textContent=txCount+' transaction'+(txCount!==1?'s':'');
-  const entries=document.getElementById('tx-entries');
-  if (txCount===1) entries.innerHTML='';
-  const el=document.createElement('div');
-  el.className='tx-entry';
-  el.innerHTML=`
+  document.getElementById('tx-ct').textContent = txCount + ' transaction' + (txCount !== 1 ? 's' : '');
+  const entries = document.getElementById('tx-entries');
+  if (txCount === 1) entries.innerHTML = '';
+  const el = document.createElement('div');
+  el.className = 'tx-entry';
+  el.innerHTML = `
     <div class="txdot txd-${type}"></div>
     <div class="tx-msg">${msg}</div>
-    ${hash?`<div class="tx-hash"><a href="${EXPLORER}/tx/${hash}" target="_blank">${hash.slice(0,14)}...</a></div>`:''}
+    ${hash ? `<div class="tx-hash"><a href="${EXPLORER}/tx/${hash}" target="_blank">${hash.slice(0,14)}...</a></div>` : ''}
   `;
   entries.prepend(el);
 }
 
-function toast(msg,type='ok') {
-  const t=document.createElement('div');
-  t.className='toast '+type;
-  t.textContent=msg;
+function toast(msg, type = 'ok') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
   document.getElementById('toasts').appendChild(t);
-  setTimeout(()=>t.remove(),4000);
+  setTimeout(() => t.remove(), 4000);
 }
 
-function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// ── INIT
-window.addEventListener('load',()=>{
+// ─────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────
+window.addEventListener('load', async () => {
   if (window.ethereum) {
-    window.ethereum.request({method:'eth_accounts'}).then(accs=>{
-      if (accs.length>0) { walletAddr=accs[0]; onConnected(); }
-      else document.getElementById('warn-banner').classList.add('show');
-    });
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (accounts.length > 0) {
+        walletAddr = accounts[0];
+        onConnected();
+      } else {
+        showBanner('Connect MetaMask to play on-chain', false);
+      }
+    } catch {}
   } else {
-    document.getElementById('warn-banner').classList.add('show');
+    showBanner('Install MetaMask at metamask.io to play on-chain', false);
   }
-  // Auto-load the contract
-  setTimeout(()=>loadContract(), 800);
+
+  // FIX: auto-load with error handling so failures show a toast
+  try {
+    await loadContract();
+  } catch (e) {
+    toast('Auto-load failed — enter contract address manually', 'info');
+  }
 });
 </script>
 </body>
