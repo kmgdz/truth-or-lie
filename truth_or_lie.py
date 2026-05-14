@@ -95,9 +95,9 @@ class TruthOrLie(gl.Contract):
             if claimer not in self.pool_true:
                 raise Exception("You have no winning bets")
             staked = self.pool_true[claimer]
-            # Calculate proportion of the losing pool
-            share = staked / self.total_true
-            amount_won = staked + int(self.total_lie * share)
+            # Calculate proportion of the losing pool (avoiding float logic for Wei precision)
+            reward = (staked * self.total_lie) // self.total_true
+            amount_won = staked + reward
             # Remove from pool to prevent double-claiming
             del self.pool_true[claimer]
             
@@ -105,9 +105,9 @@ class TruthOrLie(gl.Contract):
             if claimer not in self.pool_lie:
                 raise Exception("You have no winning bets")
             staked = self.pool_lie[claimer]
-            # Calculate proportion of the losing pool
-            share = staked / self.total_lie
-            amount_won = staked + int(self.total_true * share)
+            # Calculate proportion of the losing pool (avoiding float logic for Wei precision)
+            reward = (staked * self.total_true) // self.total_lie
+            amount_won = staked + reward
             # Remove from pool to prevent double-claiming
             del self.pool_lie[claimer]
 
