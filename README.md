@@ -6,7 +6,7 @@
 [![Play Now](https://img.shields.io/badge/Play_Now-Live-success?style=for-the-badge)](https://truth-or-lie-six.vercel.app/)
 [![Powered by Genlayer](https://img.shields.io/badge/Powered_by-Genlayer-black?style=for-the-badge&logo=python)](https://genlayer.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-gold.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Testnet Bradbury](https://img.shields.io/badge/Network-Testnet_Bradbury-blue?style=for-the-badge)](https://explorer.testnet-chain.genlayer.com)
+[![Studionet](https://img.shields.io/badge/Network-Studionet-blue?style=for-the-badge)](https://explorer-studio.genlayer.com)
 
 *Stake $GEN tokens. Let decentralized AI validators judge the facts. Winners take the pool.*
 
@@ -14,30 +14,30 @@
 
 ---
 
-## 🌍 Live on Testnet Bradbury
+## 🌍 Live on Studionet
 
-The logic is live! The game is currently deployed and fully playable on the **GenLayer Testnet Bradbury**. 
+The logic is live! The game is currently deployed and fully playable on **GenLayer Studionet**. 
 
 **🚀 Play Now:** [https://truth-or-lie-six.vercel.app/](https://truth-or-lie-six.vercel.app/)
 
 **🎮 Deployed Contract Address:**  
 `0x155c991fEdb92e50056B34EC639934be793375E4`  
-*(View on the [GenLayer Explorer](https://explorer.testnet-chain.genlayer.com/))*
+*(View on the [GenLayer Explorer](https://explorer-studio.genlayer.com/))*
 
 ### Network Setup
 
-To connect your wallet and interact with the game, add the testnet to your Web3 wallet:
+To connect your wallet and interact with the game, add Studionet to your Web3 wallet:
 
 | Field | Value |
 | :--- | :--- |
-| **Network Name** | GenLayer Testnet Bradbury |
-| **Chain ID** | `4221` (Hex: `0x107D`) |
-| **GenLayer Chain RPC** | `https://rpc.testnet-chain.genlayer.com` |
+| **Network Name** | GenLayer Studionet |
+| **Chain ID** | `61999` (Hex: `0xF22F`) |
+| **GenLayer Chain RPC** | `https://studio.genlayer.com/api` |
 | **Currency Symbol** | `GEN` |
-| **Block Explorer** | [explorer.testnet-chain.genlayer.com](https://explorer.testnet-chain.genlayer.com) |
+| **Block Explorer** | [explorer-studio.genlayer.com](https://explorer-studio.genlayer.com) |
 
 💧 **Need tokens to play?**  
-Before placing your first bet, make sure to claim your testing tokens from the **[GenLayer Faucet](https://testnet-faucet.genlayer.foundation)**!
+Before placing your first bet, make sure to claim your testing tokens from the **Built-in faucet (use the 💧 button in the account selector)**!
 
 ---
 
@@ -95,7 +95,7 @@ class TruthOrLie(gl.Contract):
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Access to a GenLayer testnet/validator node (or connecting to the public RPC).
+- Access to a GenLayer Studionet/validator node (or connecting to the public RPC).
 - Python 3.10+
 - GenLayer Simulator / CLI installed.
 
@@ -109,7 +109,7 @@ class TruthOrLie(gl.Contract):
    ```bash
    genlayer simulate truth_or_lie.py
    ```
-3. Deploy to the GenLayer Testnet:
+3. Deploy to the GenLayer Studionet:
    ```bash
    genlayer deploy truth_or_lie.py --init "['The Earth is flat']"
    ```

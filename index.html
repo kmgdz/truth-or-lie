@@ -657,12 +657,12 @@ footer{
     <span class="marquee-item">5 LLM VALIDATORS JUDGE EVERY STATEMENT</span>
     <span class="marquee-item">WINNERS SPLIT THE POOL AUTOMATICALLY</span>
     <span class="marquee-item">NO HUMAN JUDGES · NO CENTRAL AUTHORITY</span>
-    <span class="marquee-item">BUILT ON GENLAYER BRADBURY TESTNET</span>
+    <span class="marquee-item">BUILT ON GENLAYER STUDIONET</span>
     <span class="marquee-item">STAKE GEN TOKENS ON THE TRUTH</span>
     <span class="marquee-item">5 LLM VALIDATORS JUDGE EVERY STATEMENT</span>
     <span class="marquee-item">WINNERS SPLIT THE POOL AUTOMATICALLY</span>
     <span class="marquee-item">NO HUMAN JUDGES · NO CENTRAL AUTHORITY</span>
-    <span class="marquee-item">BUILT ON GENLAYER BRADBURY TESTNET</span>
+    <span class="marquee-item">BUILT ON GENLAYER STUDIONET</span>
   </div>
 </div>
 
@@ -704,14 +704,14 @@ footer{
     <div class="wpill-dot" id="wpill-dot"></div>
     <div>
       <div class="wpill-text" id="wpill-text">CONNECT WALLET</div>
-      <div class="wpill-net">TESTNET BRADBURY</div>
+      <div class="wpill-net">STUDIONET</div>
     </div>
   </button>
 </nav>
 
 <!-- WARN BANNER -->
 <div class="warn-banner" id="warn-banner">
-  ⚠ &nbsp; <span id="warn-msg">Connect MetaMask + switch to GenLayer Testnet Bradbury to play on-chain</span>
+  ⚠ &nbsp; <span id="warn-msg">Connect MetaMask + switch to GenLayer Studionet to play on-chain</span>
   <button id="switch-net-btn" onclick="handleSwitchNetwork()" style="margin-left: 15px; background: var(--gold); color: #000; border: none; padding: 4px 10px; font-family: var(--mono); font-size: 0.6rem; cursor: crosshair; font-weight: bold; border-radius: 2px;">SWITCH NETWORK</button>
 </div>
 
@@ -784,7 +784,7 @@ footer{
 
   <!-- LOADER -->
   <div class="loader-card">
-    <div class="loader-label">Load Contract · Testnet Bradbury</div>
+    <div class="loader-label">Load Contract · Studionet</div>
     <div class="loader-row">
       <div class="linput-wrap">
         <label class="linput-label">Contract Address</label>
@@ -902,15 +902,15 @@ footer{
 
   <!-- NETWORK INFO -->
   <div class="network-box">
-    <div class="loader-label">Network Details · Testnet Bradbury</div>
+    <div class="loader-label">Network Details · Studionet</div>
     <div class="net-grid">
       <div class="net-item">
         <div class="net-item-label">Chain ID</div>
-        <div class="net-item-val" id="disp-chain-id">4221 (0x107D)</div>
+        <div class="net-item-val" id="disp-chain-id">61999 (0xF22F)</div>
       </div>
       <div class="net-item">
         <div class="net-item-label">GenLayer Chain RPC</div>
-        <div class="net-item-val" style="word-break: break-all;" id="disp-rpc">rpc.testnet-chain.genlayer.com</div>
+        <div class="net-item-val" style="word-break: break-all;" id="disp-rpc">studio.genlayer.com/api</div>
       </div>
       <div class="net-item">
         <div class="net-item-label">Symbol</div>
@@ -923,10 +923,10 @@ footer{
       <div class="net-item" style="grid-column: span 2">
         <div class="net-item-label">Setup Instructions</div>
         <div class="net-item-val" style="font-size:0.6rem; line-height: 1.5;">
-          Testnet Bradbury is a production-like testnet.<br/>
-          GenLayer RPC: https://rpc.testnet-chain.genlayer.com<br/>
-          Chain Explorer: explorer.testnet-chain.genlayer.com<br/>
-          Faucet: testnet-faucet.genlayer.foundation
+          Studionet is a hosted development environment.<br/>
+          GenLayer RPC: https://studio.genlayer.com/api<br/>
+          Chain Explorer: explorer-studio.genlayer.com<br/>
+          Faucet: Built-in — use the 💧 button in the account selector
         </div>
       </div>
     </div>
@@ -987,19 +987,19 @@ footer{
     <a href="https://portal.genlayer.foundation" target="_blank">Builder Portal</a>
     <a href="https://studio.genlayer.com" target="_blank">Studio</a>
   </div>
-  <div class="fcopy">Built by @kmgdz · GenLayer Bradbury Testnet</div>
+  <div class="fcopy">Built by @kmgdz · GenLayer Studionet</div>
 </footer>
 
 <div class="toast-area" id="toasts"></div>
 
 <script>
 // ── NETWORK CONFIG
-const CHAIN_ID = '0x107d'; 
-const RPC = 'https://rpc.testnet-chain.genlayer.com'; 
-const EXPLORER = 'https://explorer.testnet-chain.genlayer.com';
+const CHAIN_ID = '0xf22f'; 
+const RPC = 'https://studio.genlayer.com/api'; 
+const EXPLORER = 'https://explorer-studio.genlayer.com';
 const CHAIN_PARAMS = {
   chainId: CHAIN_ID,
-  chainName: 'GenLayer Testnet Bradbury',
+  chainName: 'GenLayer Studionet',
   nativeCurrency:{name:'GEN',symbol:'GEN',decimals:18},
   rpcUrls:[RPC],
   blockExplorerUrls:[EXPLORER]
@@ -1032,7 +1032,7 @@ async function connectWallet() {
 async function handleSwitchNetwork() {
   try {
     await ensureNetwork();
-    toast('Network switched to GenLayer Testnet Bradbury!', 'ok');
+    toast('Network switched to GenLayer Studionet!', 'ok');
   } catch (e) {
     if (e.code === 4001) {
       toast('Network change was rejected by user.', 'err');
@@ -1078,7 +1078,7 @@ async function checkNetworkSilent() {
   try {
     const cid = await window.ethereum.request({ method: 'eth_chainId' });
     if (cid.toLowerCase() !== CHAIN_ID.toLowerCase()) {
-      document.getElementById('warn-msg').textContent = walletAddr ? 'You are on the wrong network. Switch to play on-chain.' : 'Connect MetaMask + switch to GenLayer Testnet Bradbury';
+      document.getElementById('warn-msg').textContent = walletAddr ? 'You are on the wrong network. Switch to play on-chain.' : 'Connect MetaMask + switch to GenLayer Studionet';
       document.getElementById('switch-net-btn').style.display = 'inline-block';
       document.getElementById('warn-banner').classList.add('show');
     } else {
@@ -1114,7 +1114,7 @@ function onConnected() {
       document.getElementById('wallet-pill').classList.remove('live');
       document.getElementById('wpill-text').textContent = 'CONNECT WALLET';
       document.getElementById('wallet-display').value = '';
-      document.getElementById('warn-msg').textContent = 'Connect MetaMask + switch to GenLayer Testnet Bradbury to play on-chain';
+      document.getElementById('warn-msg').textContent = 'Connect MetaMask + switch to GenLayer Studionet to play on-chain';
       document.getElementById('switch-net-btn').style.display = 'none';
       document.getElementById('warn-banner').classList.add('show');
     }
