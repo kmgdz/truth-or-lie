@@ -16,12 +16,12 @@
 
 ## 🌍 Live on Studionet
 
-The logic is live! The game is currently deployed and fully playable on **GenLayer Studionet**. 
+The contract is deployed and finalized on **GenLayer Studionet**. Betting (`place_bet`) and reading game state are confirmed working; the AI judgment step (`judge_statement`) uses GenLayer's Equivalence Principle for validator consensus and should resolve within roughly 30–90 seconds of being triggered — try it and see!
 
 **🚀 Play Now:** [https://truth-or-lie-six.vercel.app/](https://truth-or-lie-six.vercel.app/)
 
 **🎮 Deployed Contract Address:**  
-`0x155c991fEdb92e50056B34EC639934be793375E4`  
+`0xEF5aF2a041E8Bcbbe2F663A64dafcbF0aA1F7aFB`  
 *(View on the [GenLayer Explorer](https://explorer-studio.genlayer.com/))*
 
 ### Network Setup
@@ -63,7 +63,7 @@ Instead of relying on centralized oracles or human judges, "Truth or Lie" delega
 1. **The Claim:** A smart contract is initialized with a statement (e.g., *"Bitcoin hit $100k in 2024"*).
 2. **The Stake:** Players interact with the `place_bet(vote)` function, sending $GEN tokens to stake on either `"true"` or `"lie"`.
 3. **The Lock:** Betting is closed via `close_betting()`, securing the pool.
-4. **The Verdict:** The `resolve_verdict()` function triggers GenLayer's LLM validators. The validators connect to the web, gather context, and reach a Byzantine Fault Tolerant consensus on the truth.
+4. **The Verdict:** The `judge_statement()` function triggers GenLayer's LLM validators (after `close_betting()` has moved the game into "judging" state). The validators connect to the web, gather context, and reach consensus on the truth via the Equivalence Principle.
 5. **The Reward:** The smart contract natively parses the result. If the statement is deemed a "lie", the "true" bettors' stakes are distributed proportionally to the "lie" bettors (and vice-versa).
 
 ---
@@ -79,7 +79,7 @@ This project showcases the unique paradigm of **GenLayer Intelligent Contracts**
 
 *Sample from `truth_or_lie.py`:*
 ```python
-# { "Depends": "py-genlayer:test" }
+# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
 from genlayer import *
 
 class TruthOrLie(gl.Contract):
@@ -95,9 +95,8 @@ class TruthOrLie(gl.Contract):
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Access to a GenLayer Studionet/validator node (or connecting to the public RPC).
-- Python 3.10+
-- GenLayer Simulator / CLI installed.
+- A wallet (e.g. MetaMask) connected to GenLayer Studionet, or the [`genlayer-cli`](https://docs.genlayer.com/api-references/genlayer-cli) installed
+- Python 3.10+ (only needed if deploying via CLI rather than the browser-based [GenLayer Studio](https://studio.genlayer.com))
 
 ### Installation & Deployment
 1. Clone the repository:
@@ -105,21 +104,27 @@ class TruthOrLie(gl.Contract):
    git clone https://github.com/kmgdz/truth-or-lie.git
    cd truth-or-lie
    ```
-2. Run the file locally using the GenLayer Simulator:
+2. Set your network (or select interactively):
    ```bash
-   genlayer simulate truth_or_lie.py
+   genlayer network set studionet
    ```
-3. Deploy to the GenLayer Studionet:
+3. Deploy to the GenLayer Studionet, passing the statement as a constructor arg:
    ```bash
-   genlayer deploy truth_or_lie.py --init "['The Earth is flat']"
+   genlayer deploy --contract truth_or_lie.py --args "The Earth is flat"
    ```
+   This was also tested by deploying directly through the browser-based
+   [GenLayer Studio](https://studio.genlayer.com) IDE, which doesn't require the CLI at all.
 
 ### Frontend
-To run the front-end interface, simply serve the index file (or use Vercel as configured in `vercel.json`):
+To run the front-end interface locally (including the `/api/rpc` proxy), use the Vercel CLI:
 ```bash
-npx serve .
+npm i -g vercel
+vercel dev
 ```
-Access the dark-mode cinematic interface at `localhost:3000`.
+`npx serve .` alone will **not** work — it only serves static files and has no
+way to run `api/rpc.js`, so the wallet-connected views (Explore/statement
+loading) will fail with a JSON parsing error locally, even though the
+deployed Vercel site works fine.
 
 ---
 

@@ -789,7 +789,7 @@ footer{
       <div class="linput-wrap">
         <label class="linput-label">Contract Address</label>
         <input class="linput" type="text" id="contract-input"
-          value="0x155c991fEdb92e50056B34EC639934be793375E4"
+          value="0xEF5aF2a041E8Bcbbe2F663A64dafcbF0aA1F7aFB"
           placeholder="0x... paste your deployed contract"/>
       </div>
       <button class="load-btn" id="load-btn" onclick="loadContract()">LOAD GAME</button>
@@ -992,10 +992,14 @@ footer{
 
 <div class="toast-area" id="toasts"></div>
 
-<script>
+<script type="module">
+import { createClient } from "https://esm.sh/genlayer-js@latest";
+import { studionet } from "https://esm.sh/genlayer-js@latest/chains";
+
 // ── NETWORK CONFIG
-const CHAIN_ID = '0xf22f'; 
-const RPC = 'https://studio.genlayer.com/api'; 
+const CHAIN_ID = '0xf22f';
+const RPC = 'https://studio.genlayer.com/api';
+const PROXY_RPC = '/api/rpc';   // Vercel proxy — bypasses browser CORS restrictions
 const EXPLORER = 'https://explorer-studio.genlayer.com';
 const CHAIN_PARAMS = {
   chainId: CHAIN_ID,
@@ -1005,9 +1009,16 @@ const CHAIN_PARAMS = {
   blockExplorerUrls:[EXPLORER]
 };
 
+// genlayer-js client — handles GenVM's calldata encoding correctly.
+// (A hand-rolled JSON->hex encoder used previously did NOT match GenVM's
+// calldata format, and eth_call is the wrong method entirely for reading
+// Intelligent Contract state — GenLayer uses gen_call under the hood,
+// which this SDK sends for us.)
+let client = createClient({ chain: studionet, endpoint: PROXY_RPC });
+
 // ── STATE
 let walletAddr = null;
-let contractAddr = '0x155c991fEdb92e50056B34EC639934be793375E4';
+let contractAddr = '0xEF5aF2a041E8Bcbbe2F663A64dafcbF0aA1F7aFB';
 let selectedSide = null;
 let gameStatus = 'open';
 let trueAmt = 0, lieAmt = 0;
@@ -1104,6 +1115,10 @@ function onConnected() {
   logTx('ok', 'Connected: '+walletAddr, '');
   checkNetworkSilent();
 
+  // Re-create the client bound to the connected account so writes
+  // get routed to MetaMask for signing.
+  client = createClient({ chain: studionet, endpoint: PROXY_RPC, account: walletAddr });
+
   window.ethereum.on('accountsChanged', accs => {
     walletAddr = accs[0] || null;
     if (walletAddr) {
@@ -1154,35 +1169,28 @@ async function loadContract() {
 }
 
 // ── RPC CALLS
+// Read-only contract call, via the genlayer-js SDK (uses gen_call under
+// the hood with correct GenVM calldata encoding — NOT eth_call).
 async function viewCall(method, args=[]) {
-  const data = encodeCall(method, args);
-  const body = {jsonrpc:'2.0',id:Date.now(),method:'eth_call',params:[{to:contractAddr,data},'latest']};
-  const res = await fetch(RPC, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  const json = await res.json();
-  if (json.error) throw new Error(json.error.message);
-  return hexToStr(json.result);
+  return await client.readContract({
+    address: contractAddr,
+    functionName: method,
+    args: args || []
+  });
 }
 
+// Write contract call — signed via MetaMask through genlayer-js.
+// valueGEN is a plain GEN amount (e.g. 10), converted to wei internally.
 async function sendTx(method, args=[], valueGEN=0) {
   if (!walletAddr) { toast('Connect wallet first','info'); document.getElementById('warn-banner').classList.add('show'); return null; }
   await ensureNetwork();
-  const data = encodeCall(method, args);
-  const tx = {from:walletAddr, to:contractAddr, data, gas:'0x493E0'};
-  if (valueGEN>0) { const w=BigInt(Math.floor(valueGEN*1e18)); tx.value='0x'+w.toString(16); }
-  return await window.ethereum.request({method:'eth_sendTransaction',params:[tx]});
-}
-
-function encodeCall(method, args) {
-  const str = JSON.stringify({method, args});
-  return '0x'+[...new TextEncoder().encode(str)].map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-
-function hexToStr(hex) {
-  if (!hex||hex==='0x'||hex==='0x0') return '';
-  try {
-    const bytes = hex.replace('0x','').match(/.{1,2}/g).map(b=>parseInt(b,16));
-    return new TextDecoder().decode(new Uint8Array(bytes));
-  } catch { return hex; }
+  const valueWei = valueGEN > 0 ? BigInt(Math.floor(valueGEN*1e18)) : 0n;
+  return await client.writeContract({
+    address: contractAddr,
+    functionName: method,
+    args: args || [],
+    value: valueWei
+  });
 }
 
 // ── GAME ACTIONS
@@ -1230,7 +1238,7 @@ async function judgeStatement() {
     if (!judgeTx) throw new Error('Rejected');
     setStatus('judging');
     logTx('pending', 'LLMs evaluating statement... (30–90s)', judgeTx);
-    toast('5 LLM validators are researching the statement...', 'info');
+    toast('LLM validators are researching the statement...', 'info');
     pollVerdict(judgeTx);
   } catch(e) {
     toast('Failed: '+(e.message||e), 'err');
