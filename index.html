@@ -1396,6 +1396,19 @@ window.addEventListener('load',()=>{
   // Auto-load the contract
   setTimeout(()=>loadContract(), 800);
 });
+
+// Expose functions referenced by inline onclick="" attributes in the HTML.
+// Needed because <script type="module"> scopes everything to the module,
+// not to window — without this, every button click silently fails with
+// "function is not defined" and does nothing.
+window.connectWallet = connectWallet;
+window.handleSwitchNetwork = handleSwitchNetwork;
+window.loadContract = loadContract;
+window.selectSide = selectSide;
+window.placeBet = placeBet;
+window.judgeStatement = judgeStatement;
+window.refreshState = refreshState;
+window.claimWinnings = claimWinnings;
 </script>
 </body>
 </html>
