@@ -789,7 +789,7 @@ footer{
       <div class="linput-wrap">
         <label class="linput-label">Contract Address</label>
         <input class="linput" type="text" id="contract-input"
-          value="0xEF5aF2a041E8Bcbbe2F663A64dafcbF0aA1F7aFB"
+          value="0x0F81A4230B5Ad3DC30c4F0b8A27b63f10F3A8B7a"
           placeholder="0x... paste your deployed contract"/>
       </div>
       <button class="load-btn" id="load-btn" onclick="loadContract()">LOAD GAME</button>
@@ -1018,7 +1018,7 @@ let client = createClient({ chain: studionet, endpoint: PROXY_RPC });
 
 // ── STATE
 let walletAddr = null;
-let contractAddr = '0xEF5aF2a041E8Bcbbe2F663A64dafcbF0aA1F7aFB';
+let contractAddr = '0x0F81A4230B5Ad3DC30c4F0b8A27b63f10F3A8B7a';
 let selectedSide = null;
 let gameStatus = 'open';
 let trueAmt = 0, lieAmt = 0;
@@ -1151,8 +1151,8 @@ async function loadContract() {
     const data = JSON.parse(raw);
     document.getElementById('gc-addr').textContent = addr.slice(0,14)+'...'+addr.slice(-6);
     document.getElementById('stmt-text').textContent = data.statement || 'No statement';
-    trueAmt = Number(data.total_true)||0;
-    lieAmt  = Number(data.total_lie)||0;
+    trueAmt = weiToGen(data.total_true);
+    lieAmt  = weiToGen(data.total_lie);
     gameStatus = data.status||'open';
     updateBar();
     setStatus(gameStatus);
@@ -1194,6 +1194,13 @@ async function sendTx(method, args=[], valueGEN=0) {
 }
 
 // ── GAME ACTIONS
+// Contract stores total_true/total_lie in wei (u256). Convert to plain
+// GEN for display — without this, amounts show scaled by 1e18.
+function weiToGen(weiStr) {
+  const n = Number(weiStr) || 0;
+  return n / 1e18;
+}
+
 function selectSide(side) {
   if (gameStatus!=='open') { toast('Betting is closed','info'); return; }
   selectedSide = side;
@@ -1255,8 +1262,8 @@ async function pollVerdict(txHash) {
       const raw = await viewCall('get_game_summary',[]);
       const data = JSON.parse(raw);
       if (data.status==='settled') {
-        trueAmt=Number(data.total_true)||trueAmt;
-        lieAmt=Number(data.total_lie)||lieAmt;
+        trueAmt=weiToGen(data.total_true)||trueAmt;
+        lieAmt=weiToGen(data.total_lie)||lieAmt;
         updateBar(); setStatus('settled');
         await showVerdict();
         document.getElementById('claim-btn').style.display='inline-block';
@@ -1280,7 +1287,7 @@ async function showVerdict() {
     const v=(data.verdict||'').toLowerCase();
     const c=Number(data.confidence)||0;
     const r=data.reasoning||'No reasoning provided';
-    const total=(Number(data.total_true)||0)+(Number(data.total_lie)||0);
+    const total=weiToGen(data.total_true)+weiToGen(data.total_lie);
     const vw=document.getElementById('verdict-wrap');
     vw.classList.add('show');
     vw.className='verdict-wrap show '+(v==='true'?'vv-true':v==='lie'?'vv-lie':'');
@@ -1315,8 +1322,8 @@ async function refreshState() {
   try {
     const raw=await viewCall('get_game_summary',[]);
     const data=JSON.parse(raw);
-    trueAmt=Number(data.total_true)||0;
-    lieAmt=Number(data.total_lie)||0;
+    trueAmt=weiToGen(data.total_true);
+    lieAmt=weiToGen(data.total_lie);
     gameStatus=data.status||'open';
     document.getElementById('stmt-text').textContent=data.statement||'';
     updateBar(); setStatus(gameStatus);

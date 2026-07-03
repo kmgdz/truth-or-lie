@@ -16,12 +16,12 @@
 
 ## 🌍 Live on Studionet
 
-The contract is deployed and finalized on **GenLayer Studionet**. Betting (`place_bet`) and reading game state are confirmed working; the AI judgment step (`judge_statement`) uses GenLayer's Equivalence Principle for validator consensus and should resolve within roughly 30–90 seconds of being triggered — try it and see!
+This exact contract instance is freshly deployed (0 bets so far — see the Explorer link below). The same contract logic (betting, reading game state, and AI-judged settlement via GenLayer's Equivalence Principle) was already exercised on a prior deployment of this code; the AI judgment step typically resolves within roughly 30–90 seconds of being triggered. Try placing a bet and triggering judgment yourself to see it end-to-end on this instance.
 
 **🚀 Play Now:** [https://truth-or-lie-six.vercel.app/](https://truth-or-lie-six.vercel.app/)
 
 **🎮 Deployed Contract Address:**  
-`0xEF5aF2a041E8Bcbbe2F663A64dafcbF0aA1F7aFB`  
+`0x0F81A4230B5Ad3DC30c4F0b8A27b63f10F3A8B7a`  
 *(View on the [GenLayer Explorer](https://explorer-studio.genlayer.com/))*
 
 ### Network Setup
@@ -53,7 +53,7 @@ Instead of relying on centralized oracles or human judges, "Truth or Lie" delega
 
 - **🧠 AI-Powered Settlement:** Uses native LLM execution at the protocol level to parse web evidence and verify statements.
 - **🔗 Intelligent Contracts:** Written purely in Python using the `py-genlayer` SDK. No Solidity required!
-- **💸 Automated Payouts:** Winners automatically split the staked $GEN tokens from the losing side based on AI consensus.
+- **💸 Proportional Payouts:** Once the AI verdict settles the game, winners call `claim_winnings()` to receive their original stake plus a proportional share of the losing side's pool.
 - **📜 Transparent Reasoning:** The blockchain permanently records the AI's confidence score and reasoning alongside the final verdict.
 
 ---
@@ -64,7 +64,7 @@ Instead of relying on centralized oracles or human judges, "Truth or Lie" delega
 2. **The Stake:** Players interact with the `place_bet(vote)` function, sending $GEN tokens to stake on either `"true"` or `"lie"`.
 3. **The Lock:** Betting is closed via `close_betting()`, securing the pool.
 4. **The Verdict:** The `judge_statement()` function triggers GenLayer's LLM validators (after `close_betting()` has moved the game into "judging" state). The validators connect to the web, gather context, and reach consensus on the truth via the Equivalence Principle.
-5. **The Reward:** The smart contract natively parses the result. If the statement is deemed a "lie", the "true" bettors' stakes are distributed proportionally to the "lie" bettors (and vice-versa).
+5. **The Reward:** Once settled, each winning bettor calls `claim_winnings()` to receive their original stake back plus a proportional share of the losing side's pool. If the statement is deemed a "lie", the "lie" bettors split the "true" bettors' stakes (and vice-versa).
 
 ---
 
