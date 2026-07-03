@@ -21,7 +21,7 @@ This exact contract instance is freshly deployed (0 bets so far — see the Expl
 **🚀 Play Now:** [https://truth-or-lie-six.vercel.app/](https://truth-or-lie-six.vercel.app/)
 
 **🎮 Deployed Contract Address:**  
-`0x0F81A4230B5Ad3DC30c4F0b8A27b63f10F3A8B7a`  
+`0x644C1f4C996474163b8ff83bD1407F7f3D96b78F`  
 *(View on the [GenLayer Explorer](https://explorer-studio.genlayer.com/))*
 
 ### Network Setup
