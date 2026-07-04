@@ -16,7 +16,7 @@
 
 ## 🌍 Live on Studionet
 
-This exact contract instance is freshly deployed (0 bets so far — see the Explorer link below). The same contract logic (betting, reading game state, and AI-judged settlement via GenLayer's Equivalence Principle) was already exercised on a prior deployment of this code; the AI judgment step typically resolves within roughly 30–90 seconds of being triggered. Try placing a bet and triggering judgment yourself to see it end-to-end on this instance.
+This contract is deployed and finalized on **GenLayer Studionet**. Verified on-chain: the constructor and 4 separate `place_bet` calls have all succeeded (5 GEN currently staked — see the [Explorer link](https://explorer-studio.genlayer.com/address/0x57127ECB816B703A9695f727fD7Fbbfd86800883) for live transaction history). The `close_betting` → `judge_statement` → `claim_winnings` flow has not yet been triggered on this instance; trigger it from the site to see GenLayer's Equivalence Principle resolve a real verdict.
 
 **🚀 Play Now:** [https://truth-or-lie-six.vercel.app/](https://truth-or-lie-six.vercel.app/)
 
@@ -38,6 +38,32 @@ To connect your wallet and interact with the game, add Studionet to your Web3 wa
 
 💧 **Need tokens to play?**  
 Before placing your first bet, make sure to claim your testing tokens from the **Built-in faucet (use the 💧 button in the account selector)**!
+
+---
+
+## 🧪 How To Test This Contribution
+
+For reviewers/devs verifying this submission — the full flow end-to-end:
+
+1. **Open the live app:** [https://truth-or-lie-six.vercel.app/](https://truth-or-lie-six.vercel.app/)
+2. **Connect your wallet** (top right) — MetaMask or similar, and make sure you're on **GenLayer Studionet**. If the network isn't added yet, the app will prompt you to add/switch to it automatically.
+3. **Get test GEN** if you don't have any — use the built-in faucet (💧 button in the account selector on `studio.genlayer.com`).
+4. **Load the contract:** the address `0x57127ECB816B703A9695f727fD7Fbbfd86800883` is pre-filled in the "Contract Address" field. Click **LOAD GAME**. The statement should display, along with current TRUE/LIE pool totals (already has real bets on it — see the [Explorer](https://explorer-studio.genlayer.com/address/0x57127ECB816B703A9695f727fD7Fbbfd86800883) for transaction history).
+5. **Place a bet:** click **TRUE** or **LIE**, enter an amount (e.g. `1`), click the stake button, and confirm in your wallet. The pool totals should update after the transaction confirms (a few seconds).
+6. **Trigger judgment:** click **⚡ TRIGGER AI JUDGMENT**. This calls `close_betting()` then `judge_statement()`, sequentially. Confirm both wallet prompts.
+7. **Wait for the verdict:** the page polls automatically every few seconds. GenLayer's LLM validators need to reach consensus via the Equivalence Principle, which typically takes **30–90 seconds**. When it resolves, a verdict (TRUE/LIE), confidence score, and reasoning will appear.
+8. **Claim winnings** (only relevant if you bet on the winning side): once settled, a **🏆 CLAIM WINNINGS** button appears — click it to receive your stake back plus a proportional share of the losing pool.
+
+**To test against a fresh contract instead** (no existing bets), deploy a new instance yourself:
+- Open `truth_or_lie.py` in [GenLayer Studio](https://studio.genlayer.com)
+- Deploy with a constructor argument of your choice, e.g. `"The Great Wall of China is visible from space with the naked eye"`
+- Paste the new contract address into the app's "Contract Address" field and click LOAD GAME
+
+**What to check for a valid pass:**
+- Statement loads without a JSON-parsing error (this was the original bug — a missing CORS proxy)
+- Placing a bet doesn't throw a "no verdict" or "execution failed" error
+- The judgment step actually resolves to a real verdict, not stuck indefinitely on "judging"
+- Pool amounts display as plain GEN (e.g. "5 GEN"), not scaled by 10¹⁸
 
 ---
 

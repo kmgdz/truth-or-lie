@@ -654,13 +654,13 @@ footer{
 <div class="marquee-top">
   <div class="marquee-inner" id="marquee">
     <span class="marquee-item">STAKE GEN TOKENS ON THE TRUTH</span>
-    <span class="marquee-item">5 LLM VALIDATORS JUDGE EVERY STATEMENT</span>
-    <span class="marquee-item">WINNERS SPLIT THE POOL AUTOMATICALLY</span>
+    <span class="marquee-item">LLM VALIDATORS JUDGE EVERY STATEMENT</span>
+    <span class="marquee-item">WINNERS CLAIM A SHARE OF THE POOL</span>
     <span class="marquee-item">NO HUMAN JUDGES · NO CENTRAL AUTHORITY</span>
     <span class="marquee-item">BUILT ON GENLAYER STUDIONET</span>
     <span class="marquee-item">STAKE GEN TOKENS ON THE TRUTH</span>
-    <span class="marquee-item">5 LLM VALIDATORS JUDGE EVERY STATEMENT</span>
-    <span class="marquee-item">WINNERS SPLIT THE POOL AUTOMATICALLY</span>
+    <span class="marquee-item">LLM VALIDATORS JUDGE EVERY STATEMENT</span>
+    <span class="marquee-item">WINNERS CLAIM A SHARE OF THE POOL</span>
     <span class="marquee-item">NO HUMAN JUDGES · NO CENTRAL AUTHORITY</span>
     <span class="marquee-item">BUILT ON GENLAYER STUDIONET</span>
   </div>
@@ -761,7 +761,7 @@ footer{
       <div class="how-num">03</div>
       <div class="how-icon">🤖</div>
       <div class="how-title">LLMs Research It</div>
-      <div class="how-desc">5 independent LLM validators access the web, cross-check sources, and vote on the verdict with a confidence score.</div>
+      <div class="how-desc">Independent LLM validators access the web, cross-check sources, and vote on the verdict with a confidence score.</div>
     </div>
     <div class="how-step">
       <div class="how-num">04</div>
@@ -943,25 +943,25 @@ footer{
       <div class="why-num">01</div>
       <div class="why-icon">🧠</div>
       <div class="why-title">LLM JUDGMENT ON-CHAIN</div>
-      <div class="why-desc">GenLayer's <code style="font-family:var(--mono);font-size:.75em;color:var(--gold)">gl.exec_prompt()</code> lets validators call LLMs directly inside the contract. No oracle. No off-chain API. Pure on-chain intelligence.</div>
+      <div class="why-desc">GenLayer's <code style="font-family:var(--mono);font-size:.75em;color:var(--gold)">gl.nondet.exec_prompt()</code> lets validators call LLMs directly inside the contract. No oracle. No off-chain API. Pure on-chain intelligence.</div>
     </div>
     <div class="why-card">
       <div class="why-num">02</div>
       <div class="why-icon">🌐</div>
       <div class="why-title">LIVE WEB ACCESS</div>
-      <div class="why-desc">Validators fetch real web pages using <code style="font-family:var(--mono);font-size:.75em;color:var(--gold)">gl.get_webpage()</code> to verify facts with live sources during evaluation. The contract browses the internet.</div>
+      <div class="why-desc">Validators can fetch real web pages using <code style="font-family:var(--mono);font-size:.75em;color:var(--gold)">gl.nondet.web.get()</code> to verify facts with live sources during evaluation. The contract browses the internet.</div>
     </div>
     <div class="why-card">
       <div class="why-num">03</div>
       <div class="why-icon">⚖</div>
       <div class="why-title">MULTI-VALIDATOR CONSENSUS</div>
-      <div class="why-desc">5 independent LLM validators run the same evaluation. <code style="font-family:var(--mono);font-size:.75em;color:var(--gold)">gl.eq_principle_strict_eq()</code> ensures consensus before any verdict is accepted.</div>
+      <div class="why-desc">Independent LLM validators run the same evaluation. <code style="font-family:var(--mono);font-size:.75em;color:var(--gold)">gl.eq_principle.prompt_comparative()</code> ensures consensus before any verdict is accepted.</div>
     </div>
     <div class="why-card">
       <div class="why-num">04</div>
       <div class="why-icon">⚡</div>
-      <div class="why-title">INSTANT AUTO-PAYMENT</div>
-      <div class="why-desc"><code style="font-family:var(--mono);font-size:.75em;color:var(--gold)">gl.transfer()</code> releases the winning pool the moment consensus is reached. No withdrawal, no delay, no trust needed.</div>
+      <div class="why-title">ON-CHAIN AUTO-PAYMENT</div>
+      <div class="why-desc">Once a winner calls <code style="font-family:var(--mono);font-size:.75em;color:var(--gold)">claim_winnings()</code>, <code style="font-family:var(--mono);font-size:.75em;color:var(--gold)">emit_transfer()</code> releases their share of the pool immediately — no off-chain settlement, no manual payout.</div>
     </div>
   </div>
 </section>
