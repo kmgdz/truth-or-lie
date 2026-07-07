@@ -43,25 +43,48 @@ Before placing your first bet, make sure to claim your testing tokens from the *
 
 ## 🧪 How To Test This Contribution
 
-For reviewers/devs verifying this submission — the full flow end-to-end:
+For reviewers/devs verifying this submission — the full flow end-to-end.
+
+### Quick test (using the pre-deployed contract)
 
 1. **Open the live app:** [https://truth-or-lie-six.vercel.app/](https://truth-or-lie-six.vercel.app/)
 2. **Connect your wallet** (top right) — MetaMask or similar, and make sure you're on **GenLayer Studionet**. If the network isn't added yet, the app will prompt you to add/switch to it automatically.
 3. **Get test GEN** if you don't have any — use the built-in faucet (💧 button in the account selector on `studio.genlayer.com`).
-4. **Load the contract:** the address `0xF27FE2B440626F9A32F53c11eb9C0717BB710e60` is pre-filled in the "Contract Address" field. Click **LOAD GAME**. The statement should display, along with current TRUE/LIE pool totals (already has real bets on it — see the [Explorer](https://explorer-studio.genlayer.com/address/0xF27FE2B440626F9A32F53c11eb9C0717BB710e60) for transaction history).
+4. **Load the contract:** the address `0xF27FE2B440626F9A32F53c11eb9C0717BB710e60` is pre-filled in the "Contract Address" field. Click **LOAD GAME**. The statement should display, along with current TRUE/LIE pool totals.
 5. **Place a bet:** click **TRUE** or **LIE**, enter an amount (e.g. `1`), click the stake button, and confirm in your wallet. The pool totals should update after the transaction confirms (a few seconds).
-6. **Trigger judgment:** click **⚡ TRIGGER AI JUDGMENT**. This calls `close_betting()` then `judge_statement()`, sequentially. Confirm both wallet prompts.
+6. **Trigger judgment:** click **⚡ TRIGGER AI JUDGMENT**. This calls `close_betting()` then `judge_statement()`, sequentially. Confirm both wallet prompts. **Any wallet can do this step** — it's no longer restricted to whoever originally deployed the contract (see "Permission fix" below).
 7. **Wait for the verdict:** the page polls automatically every few seconds. GenLayer's LLM validators need to reach consensus via the Equivalence Principle, which typically takes **30–90 seconds**. When it resolves, a verdict (TRUE/LIE), confidence score, and reasoning will appear.
 8. **Claim winnings** (only relevant if you bet on the winning side): once settled, a **🏆 CLAIM WINNINGS** button appears — click it to receive your stake back plus a proportional share of the losing pool.
 
-**To test against a fresh contract instead** (no existing bets), deploy a new instance yourself:
-- Open `truth_or_lie.py` in [GenLayer Studio](https://studio.genlayer.com)
-- Deploy with a constructor argument of your choice, e.g. `"The Great Wall of China is visible from space with the naked eye"`
-- Paste the new contract address into the app's "Contract Address" field and click LOAD GAME
+### Deploy a fresh contract with your own example statement
 
-**What to check for a valid pass:**
+Rather than reuse the pre-deployed one, you can deploy a brand-new instance and pick your own test case:
+
+1. Open `truth_or_lie.py` in [GenLayer Studio](https://studio.genlayer.com)
+2. Deploy with a constructor argument — pick one of these ready-made examples, or write your own:
+
+   | Example statement | Expected verdict |
+   |---|---|
+   | `"The Eiffel Tower is located in London, England"` | LIE (clearly false, easy to sanity-check) |
+   | `"Water boils at 100 degrees Celsius at sea level"` | TRUE (clearly true, easy to sanity-check) |
+   | `"Bitcoin's block time is approximately 10 minutes"` | TRUE (verifiable technical fact) |
+   | `"The Great Wall of China is visible from space with the naked eye"` | LIE (common myth — good test of real research, not just pattern-matching) |
+
+3. Paste the new contract address into the app's "Contract Address" field and click **LOAD GAME**
+
+### Permission fix — testing with a second wallet
+
+An earlier version of this contract restricted `close_betting()` to only the wallet that originally deployed it — meaning anyone else testing the app got stuck with a permission error and could never reach the judgment step. **This is now fixed**: any connected wallet can call `close_betting()`. To specifically verify this:
+
+1. Have Wallet A place a bet and **not** trigger judgment
+2. Switch to a different wallet (Wallet B) in MetaMask, reconnect
+3. Wallet B should be able to click **⚡ TRIGGER AI JUDGMENT** successfully — no "Only the owner can close betting" error
+
+### What to check for a valid pass
+
 - Statement loads without a JSON-parsing error (this was the original bug — a missing CORS proxy)
 - Placing a bet doesn't throw a "no verdict" or "execution failed" error
+- **A wallet other than the contract's deployer can trigger judgment** (the permission bug fix)
 - The judgment step actually resolves to a real verdict, not stuck indefinitely on "judging"
 - Pool amounts display as plain GEN (e.g. "5 GEN"), not scaled by 10¹⁸
 
