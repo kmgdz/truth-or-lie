@@ -58,10 +58,13 @@ class TruthOrLie(gl.Contract):
             raise Exception("Vote must be 'true' or 'lie'")
 
     # ── close_betting ─────────────────────────────────────────
+    # Anyone can close betting, not just the original deployer. This is a
+    # public demo contract meant to be tested by many different reviewers/
+    # users with their own wallets — restricting this to a single "owner"
+    # address means anyone else's wallet can never advance the game past
+    # "open", making the whole judge/settle flow untestable for them.
     @gl.public.write
     def close_betting(self) -> None:
-        if str(gl.message.sender_address) != str(self.owner):
-            raise Exception("Only the owner can close betting")
         if self.status != "open":
             raise Exception("Betting is not open")
         self.status = "judging"
