@@ -16,12 +16,12 @@
 
 ## 🌍 Live on Studionet
 
-This contract is deployed and finalized on **GenLayer Studionet** — verified via constructor SUCCESS on the [Explorer](https://explorer-studio.genlayer.com/address/0x80B87AbD23c29aDd95fCc3282191D6f319C478cd). This deployment also fixes a permission bug in the previous version: `close_betting()` no longer requires the caller to be the original deployer — any wallet can now advance the game through the full bet → close → judge → claim flow. Check the Explorer link for live, current transaction history rather than relying on any snapshot here.
+This contract is deployed and finalized on **GenLayer Studionet** — verified via constructor SUCCESS on the [Explorer](https://explorer-studio.genlayer.com/address/0xe4D71f1bbA6E6b0C7C27608f8b4305904A7d67b3). This deployment also fixes a permission bug in the previous version: `close_betting()` no longer requires the caller to be the original deployer — any wallet can now advance the game through the full bet → close → judge → claim flow. Check the Explorer link for live, current transaction history rather than relying on any snapshot here.
 
 **🚀 Play Now:** [https://truth-or-lie-six.vercel.app/](https://truth-or-lie-six.vercel.app/)
 
 **🎮 Deployed Contract Address:**  
-`0x80B87AbD23c29aDd95fCc3282191D6f319C478cd`  
+`0xe4D71f1bbA6E6b0C7C27608f8b4305904A7d67b3`  
 *(View on the [GenLayer Explorer](https://explorer-studio.genlayer.com/))*
 
 ### Network Setup
@@ -50,7 +50,7 @@ For reviewers/devs verifying this submission — the full flow end-to-end.
 1. **Open the live app:** [https://truth-or-lie-six.vercel.app/](https://truth-or-lie-six.vercel.app/)
 2. **Connect your wallet** (top right) — MetaMask or similar, and make sure you're on **GenLayer Studionet**. If the network isn't added yet, the app will prompt you to add/switch to it automatically.
 3. **Get test GEN** if you don't have any — use the built-in faucet (💧 button in the account selector on `studio.genlayer.com`).
-4. **Load the contract:** the address `0x80B87AbD23c29aDd95fCc3282191D6f319C478cd` is pre-filled in the "Contract Address" field. Click **LOAD GAME**. The statement should display, along with current TRUE/LIE pool totals.
+4. **Load the contract:** the address `0xe4D71f1bbA6E6b0C7C27608f8b4305904A7d67b3` is pre-filled in the "Contract Address" field. Click **LOAD GAME**. The statement should display, along with current TRUE/LIE pool totals.
 5. **Place a bet:** click **TRUE** or **LIE**, enter an amount (e.g. `1`), click the stake button, and confirm in your wallet. The pool totals should update after the transaction confirms (a few seconds).
 6. **Trigger judgment:** click **⚡ TRIGGER AI JUDGMENT**. This calls `close_betting()` then `judge_statement()`, sequentially. Confirm both wallet prompts. **Any wallet can do this step** — it's no longer restricted to whoever originally deployed the contract (see "Permission fix" below).
 7. **Wait for the verdict:** the page polls automatically every few seconds. GenLayer's LLM validators need to reach consensus via the Equivalence Principle, which typically takes **30–90 seconds**. When it resolves, a verdict (TRUE/LIE), confidence score, and reasoning will appear.
@@ -92,7 +92,7 @@ An earlier version of this contract restricted `close_betting()` to only the wal
 
 ## 📖 Overview
 
-**Truth or Lie** is a revolutionary decentralized betting game built on [GenLayer](https://genlayer.com), the first Intelligent Blockchain. Utilizing GenLayer's native **Intelligent Contracts** (written in Python), the game allows players to bet on the validity of any real-world statement. 
+**Truth or Lie** is a decentralized betting game built on [GenLayer](https://genlayer.com), the first Intelligent Blockchain. Utilizing GenLayer's native **Intelligent Contracts** (written in Python), the game allows players to bet on the validity of any real-world statement.
 
 Instead of relying on centralized oracles or human judges, "Truth or Lie" delegates the resolution to GenLayer's decentralized network of LLM validators. These AI nodes fetch internet data, reason through the evidence, reach consensus, and autonomously distribute the losing pool to the winners.
 

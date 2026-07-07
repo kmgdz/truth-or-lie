@@ -18,7 +18,9 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>TRUTH OR LIE — On-Chain Fact Game · GenLayer</title>
-<meta name="description" content="Stake GEN tokens. 5 AI validators judge the facts. Winners take the pool. The world's first on-chain fact verification game."/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2044%2044%22%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2244%22%20height%3D%2244%22%20rx%3D%229%22%20fill%3D%22%230a0a0f%22/%3E%0A%20%20%3Cpolygon%20points%3D%2222%2C5%2037%2C13.5%2037%2C30.5%2022%2C39%207%2C30.5%207%2C13.5%22%20stroke%3D%22%23c8a84b%22%20stroke-width%3D%221.4%22%20fill%3D%22none%22/%3E%0A%20%20%3Cpolygon%20points%3D%2222%2C10%2033%2C16.5%2033%2C27.5%2022%2C34%2011%2C27.5%2011%2C16.5%22%20fill%3D%22rgba%28200%2C168%2C75%2C0.10%29%22/%3E%0A%20%20%3Ctext%20x%3D%2213.5%22%20y%3D%2227.5%22%20font-family%3D%22Arial%20Black%2CArial%2Csans-serif%22%20font-weight%3D%22900%22%20font-size%3D%2215%22%20fill%3D%22%2300e676%22%3ET%3C/text%3E%0A%20%20%3Ctext%20x%3D%2223.5%22%20y%3D%2227.5%22%20font-family%3D%22Arial%20Black%2CArial%2Csans-serif%22%20font-weight%3D%22900%22%20font-size%3D%2215%22%20fill%3D%22%23ff1744%22%3EL%3C/text%3E%0A%20%20%3Ccircle%20cx%3D%2222%22%20cy%3D%225%22%20r%3D%222%22%20fill%3D%22%23c8a84b%22/%3E%0A%20%20%3Ccircle%20cx%3D%2237%22%20cy%3D%2213.5%22%20r%3D%221.5%22%20fill%3D%22%23c8a84b%22%20opacity%3D%22.5%22/%3E%0A%20%20%3Ccircle%20cx%3D%2237%22%20cy%3D%2230.5%22%20r%3D%221.5%22%20fill%3D%22%23c8a84b%22%20opacity%3D%22.5%22/%3E%0A%20%20%3Ccircle%20cx%3D%2222%22%20cy%3D%2239%22%20r%3D%221.5%22%20fill%3D%22%23c8a84b%22%20opacity%3D%22.3%22/%3E%0A%20%20%3Ccircle%20cx%3D%227%22%20cy%3D%2230.5%22%20r%3D%221.5%22%20fill%3D%22%23c8a84b%22%20opacity%3D%22.5%22/%3E%0A%20%20%3Ccircle%20cx%3D%227%22%20cy%3D%2213.5%22%20r%3D%221.5%22%20fill%3D%22%23c8a84b%22%20opacity%3D%22.5%22/%3E%0A%3C/svg%3E%0A"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2044%2044%22%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2244%22%20height%3D%2244%22%20rx%3D%229%22%20fill%3D%22%230a0a0f%22/%3E%0A%20%20%3Cpolygon%20points%3D%2222%2C5%2037%2C13.5%2037%2C30.5%2022%2C39%207%2C30.5%207%2C13.5%22%20stroke%3D%22%23c8a84b%22%20stroke-width%3D%221.4%22%20fill%3D%22none%22/%3E%0A%20%20%3Cpolygon%20points%3D%2222%2C10%2033%2C16.5%2033%2C27.5%2022%2C34%2011%2C27.5%2011%2C16.5%22%20fill%3D%22rgba%28200%2C168%2C75%2C0.10%29%22/%3E%0A%20%20%3Ctext%20x%3D%2213.5%22%20y%3D%2227.5%22%20font-family%3D%22Arial%20Black%2CArial%2Csans-serif%22%20font-weight%3D%22900%22%20font-size%3D%2215%22%20fill%3D%22%2300e676%22%3ET%3C/text%3E%0A%20%20%3Ctext%20x%3D%2223.5%22%20y%3D%2227.5%22%20font-family%3D%22Arial%20Black%2CArial%2Csans-serif%22%20font-weight%3D%22900%22%20font-size%3D%2215%22%20fill%3D%22%23ff1744%22%3EL%3C/text%3E%0A%20%20%3Ccircle%20cx%3D%2222%22%20cy%3D%225%22%20r%3D%222%22%20fill%3D%22%23c8a84b%22/%3E%0A%20%20%3Ccircle%20cx%3D%2237%22%20cy%3D%2213.5%22%20r%3D%221.5%22%20fill%3D%22%23c8a84b%22%20opacity%3D%22.5%22/%3E%0A%20%20%3Ccircle%20cx%3D%2237%22%20cy%3D%2230.5%22%20r%3D%221.5%22%20fill%3D%22%23c8a84b%22%20opacity%3D%22.5%22/%3E%0A%20%20%3Ccircle%20cx%3D%2222%22%20cy%3D%2239%22%20r%3D%221.5%22%20fill%3D%22%23c8a84b%22%20opacity%3D%22.3%22/%3E%0A%20%20%3Ccircle%20cx%3D%227%22%20cy%3D%2230.5%22%20r%3D%221.5%22%20fill%3D%22%23c8a84b%22%20opacity%3D%22.5%22/%3E%0A%20%20%3Ccircle%20cx%3D%227%22%20cy%3D%2213.5%22%20r%3D%221.5%22%20fill%3D%22%23c8a84b%22%20opacity%3D%22.5%22/%3E%0A%3C/svg%3E%0A"/>
+<meta name="description" content="Stake GEN tokens. AI validators judge the facts on-chain. Winners claim a share of the pool. An on-chain fact verification game built on GenLayer."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <style>
@@ -789,7 +791,7 @@ footer{
       <div class="linput-wrap">
         <label class="linput-label">Contract Address</label>
         <input class="linput" type="text" id="contract-input"
-          value="0x80B87AbD23c29aDd95fCc3282191D6f319C478cd"
+          value="0xe4D71f1bbA6E6b0C7C27608f8b4305904A7d67b3"
           placeholder="0x... paste your deployed contract"/>
       </div>
       <button class="load-btn" id="load-btn" onclick="loadContract()">LOAD GAME</button>
@@ -1018,7 +1020,7 @@ let client = createClient({ chain: studionet, endpoint: PROXY_RPC });
 
 // ── STATE
 let walletAddr = null;
-let contractAddr = '0x80B87AbD23c29aDd95fCc3282191D6f319C478cd';
+let contractAddr = '0xe4D71f1bbA6E6b0C7C27608f8b4305904A7d67b3';
 let selectedSide = null;
 let gameStatus = 'open';
 let trueAmt = 0, lieAmt = 0;
